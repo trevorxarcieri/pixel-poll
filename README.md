@@ -44,3 +44,14 @@ An embedded game night voting system project for my computer engineering capston
 └── .github/
     └── workflows/             # CI/CD pipelines for lint, build, test, release
 ```
+
+## Development Setup
+
+### Prerequisites
+
+- [LLVM](https://releases.llvm.org/download.html) (15.0.0+)
+- [Go](https://go.dev/doc/install) (1.20+)
+
+### TinyGo
+
+Install [TinyGo](https://tinygo.org/getting-started/) (0.30.0+). This is the Go compiler that will be used to build the firmware for the Raspberry Pi Pico W.
