@@ -55,3 +55,13 @@ An embedded game night voting system project for my computer engineering capston
 ### TinyGo
 
 Install [TinyGo](https://tinygo.org/getting-started/) (0.30.0+). This is the Go compiler that will be used to build the firmware for the Raspberry Pi Pico W.
+
+## Flashing the Pico with TinyGo
+
+1. Connect the Raspberry Pi Pico W to your computer while holding the BOOTSEL button.
+2. The Pico should appear as a mass storage device named `RPI-RP2`.
+3. Run the following command to flash a go package:
+
+   ```bash
+   tinygo flash -target=pico2-w ./path/to/your/package
+   ```
