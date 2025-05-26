@@ -44,3 +44,29 @@ An embedded game night voting system project for my computer engineering capston
 └── .github/
     └── workflows/             # CI/CD pipelines for lint, build, test, release
 ```
+
+## Flashing MicroPython Firmware
+
+### Raspberry Pi Pico 2 W
+
+Hold down the BOOTSEL button while plugging the board into USB. The UF2 file from the below page should then be copied to the USB mass storage device that appears.
+See [here](https://micropython.org/download/RPI_PICO2_W/) for more details.
+
+### ESP32-C3
+
+```bash
+esptool.py erase_flash
+esptool.py --baud 460800 write_flash 0 ESP32_BOARD_NAME-DATE-VERSION.bin
+```
+
+See [here](https://micropython.org/download/ESP32_GENERIC_C3/) for more details.
+
+## Flashing MicroPython Software
+
+To flash software to a board, use the following commands:
+
+```bash
+mpremote connect auto
+mpremote fs cp your_script.py :main.py
+mpremote disconnect
+```
