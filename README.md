@@ -22,10 +22,6 @@ pixel-poll/                        # project root ── hold pyproject.toml, RE
 │       ├── sim/                   # Simulated end-to-end controller tests
 │       └── hil/                   # Hardware-in-the-loop tests flashing a real ESP32-C3
 │
-├── stubs/                         # Extra or patched .pyi/.py stubs for IDE & linting
-│   ├── rp2/                       # RP2040-specific stub overrides (optional)
-│   └── esp32/                     # ESP32-specific stub overrides (optional)
-│
 ├── venvs/                         # Local poetry virtual-envs (ignored by Git)
 │   ├── rp2/                       # Environment with dev + rp2 dependencies installed
 │   └── esp32/                     # Environment with dev + esp32 dependencies installed
