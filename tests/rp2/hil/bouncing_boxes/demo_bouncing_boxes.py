@@ -74,19 +74,19 @@ class Box(object):
 
 def test():
     """Bouncing box."""
-    try:
-        # Baud rate of 40000000 seems about the max
-        spi = SPI(
-            0,
-            baudrate=40000000,
-            sck=Pin("GP18", Pin.OUT),
-            mosi=Pin("GP19", Pin.OUT),
-            miso=Pin("GP4", Pin.IN, Pin.PULL_DOWN),
-        )
-        display = Display(
-            spi, dc=Pin("GP7", Pin.OUT), cs=Pin("GP5", Pin.OUT), rst=Pin("GP6", Pin.OUT)
-        )
+    # Baud rate of 40000000 seems about the max
+    spi = SPI(
+        0,
+        baudrate=40000000,
+        sck=Pin("GP18", Pin.OUT),
+        mosi=Pin("GP19", Pin.OUT),
+        miso=Pin("GP4", Pin.IN, Pin.PULL_DOWN),
+    )
+    display = Display(
+        spi, dc=Pin("GP7", Pin.OUT), cs=Pin("GP5", Pin.OUT), rst=Pin("GP6", Pin.OUT)
+    )
 
+    try:
         display.clear()
 
         colors = [
