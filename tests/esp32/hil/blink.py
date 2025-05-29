@@ -1,5 +1,7 @@
+import time
+
+import neopixel
 from machine import Pin
-import neopixel, time
 
 PIXEL_PIN = 8  # GPIO your board uses for the NeoPixel
 NUM_PIXELS = 1  # there is only one on-board LED

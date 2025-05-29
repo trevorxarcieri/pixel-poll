@@ -1,4 +1,6 @@
-import machine, time
+import time
+
+import machine
 
 led = machine.Pin("LED", machine.Pin.OUT)  # onboard LED = GP25
 
