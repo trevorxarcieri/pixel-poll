@@ -83,7 +83,7 @@ This updates the installed micropython stubs to be in a format that is recognize
 
 ## Flashing MicroPython Firmware
 
-### Raspberryu Pi Pico 2 W Firmware
+### Raspberry Pi Pico 2 W Firmware
 
 Hold down the BOOTSEL button while plugging the board into USB. The UF2 file from the below page should then be copied to the USB mass storage device that appears.
 See the [firmware download page](https://micropython.org/download/RPI_PICO2_W/) for more details.
