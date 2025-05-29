@@ -5,7 +5,7 @@ An embedded game night voting system project for my computer engineering capston
 ## Repo Structure
 
 ```text
-pixel-poll/                        # project root ── hold pyproject.toml, README, lint configs
+pixel-poll/                        # project root - hold pyproject.toml, README, lint configs
 ├── src/                           # MicroPython runtime code that will be copied to boards
 │   ├── common/                    # Protocols, helpers, & logic shared by all MCUs
 │   ├── central/                   # Application code for the RP2040-Pico W “central” unit
@@ -31,7 +31,7 @@ pixel-poll/                        # project root ── hold pyproject.toml, RE
 ├── docs/                          # Architecture diagrams, requirements, design notes
 │
 └── .github/
-    └── workflows/                 # CI pipelines: lint → rp2 tests → esp32 tests → artifacts
+    └── workflows/                 # CI pipelines: lint -> rp2 tests -> esp32 tests -> artifacts
 ```
 
 ## Development Setup
@@ -43,13 +43,21 @@ pixel-poll/                        # project root ── hold pyproject.toml, RE
 
 ### Installing Dependencies
 
+#### Install the Project
+
+To install the project and its dependencies, run:
+
+```bash
+poetry install
+```
+
 #### RP2350 Virtual Environment
 
 To install the required Python dependencies of the RP2350, run:
 
 ```bash
-python -m venv .venv-rp2
-source .venv-rp2/bin/activate
+python -m venv venvs/rp2
+source venvs/rp2/bin/activate
 poetry install --with rp2
 ```
 
@@ -58,17 +66,27 @@ poetry install --with rp2
 To install the required Python dependencies of the ESP32, run:
 
 ```bash
-python -m venv .venv-esp32
-source .venv-esp32/bin/activate
+python -m venv venvs/esp32
+source venvs/esp32/bin/activate
 poetry install --with esp32
 ```
+
+#### Migrate Stub Format
+
+To migrate the stub format for the RP2350 and ESP32-C3, run:
+
+```bash
+poetry run mig-stubs-fmt
+```
+
+This updates the installed micropython stubs to be in a format that is recognized by the other Python tooling used in the repo, such as Pylint.
 
 ## Flashing MicroPython Firmware
 
 ### Raspberryu Pi Pico 2 W Firmware
 
 Hold down the BOOTSEL button while plugging the board into USB. The UF2 file from the below page should then be copied to the USB mass storage device that appears.
-See [here](https://micropython.org/download/RPI_PICO2_W/) for more details.
+See the [firmware download page](https://micropython.org/download/RPI_PICO2_W/) for more details.
 
 ### ESP32-C3 Firmware
 
@@ -78,7 +96,7 @@ esptool.py erase_flash
 esptool.py --baud 460800 write_flash 0 ESP32_BOARD_NAME-DATE-VERSION.bin
 ```
 
-See [here](https://micropython.org/download/ESP32_GENERIC_C3/) for more details.
+See the [firmware download page](https://micropython.org/download/ESP32_GENERIC_C3/) for more details.
 
 ## Flashing MicroPython Software
 
