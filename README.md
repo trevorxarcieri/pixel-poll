@@ -91,7 +91,7 @@ See the [firmware download page](https://micropython.org/download/RPI_PICO2_W/) 
 ### ESP32-C3 Firmware
 
 ```bash
-source .venv-esp32/bin/activate
+source venvs/esp32/bin/activate
 esptool.py erase_flash
 esptool.py --baud 460800 write_flash 0 ESP32_BOARD_NAME-DATE-VERSION.bin
 ```
@@ -103,6 +103,7 @@ See the [firmware download page](https://micropython.org/download/ESP32_GENERIC_
 To flash software to a board, connect the board to your computer via USB and use the following commands:
 
 ```bash
+source venvs/<board>/bin/activate
 mpremote connect auto
 mpremote fs cp your_script.py :main.py
 mpremote disconnect
