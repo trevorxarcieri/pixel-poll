@@ -18,8 +18,10 @@ def migrate_stubs(name: str, path: Path) -> None:
     migrated_stubs = []
     for file in path.glob("*.pyi"):
         if isinstance(file, Path) and file.is_file() and not file.name.startswith("__"):
-            Path(file.parent / file.stem).mkdir(parents=True)
-            file.rename(file.parent / file.stem / "__init__.pyi")
+            Path(file.parent / file.stem).mkdir(parents=True, exist_ok=True)
+            new_name = file.parent / file.stem / "__init__.pyi"
+            Path(new_name).unlink(missing_ok=True)  # Remove if exists
+            file.rename(new_name)
             migrated_stubs.append(file.stem)
 
     print(f"Finished migrating stubs for {name}: {migrated_stubs}")
