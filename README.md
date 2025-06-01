@@ -98,13 +98,28 @@ esptool.py --baud 460800 write_flash 0 ESP32_BOARD_NAME-DATE-VERSION.bin
 
 See the [firmware download page](https://micropython.org/download/ESP32_GENERIC_C3/) for more details.
 
-## Flashing MicroPython Software
+## MicroPython Software
+
+### Flashing Software
 
 To flash software to a board, connect the board to your computer via USB and use the following commands:
 
 ```bash
 source venvs/<board>/bin/activate
 mpremote connect auto
-mpremote fs cp your_script.py :main.py
+mpremote fs cp host_script.py :board_script.py
+mpremote disconnect
+```
+
+The `host_script.py` is the script you want to run on the board, and `board_script.py` is the name it will have on the board. Micropython automatically runs `boot.py` followed by `main.py` on boot, so you can files with these names will run automatically.
+
+### Running Software
+
+To run a script from your host machine on the board, you can use:
+
+```bash
+source venvs/<board>/bin/activate
+mpremote connect auto
+mpremote run board_script.py
 mpremote disconnect
 ```
