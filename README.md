@@ -8,11 +8,11 @@ An embedded game night voting system project for my computer engineering capston
 pixel-poll/                        # project root - hold pyproject.toml, README, lint configs
 ├── src/                           # MicroPython runtime code that will be copied to boards
 │   ├── common/                    # Protocols, helpers, & logic shared by all MCUs
-│   ├── central/                   # Application code for the RP2040-Pico W “central” unit
+│   ├── central/                   # Application code for the RP2350-Pico W “central” unit
 │   └── controller/                # Application code for the ESP32-C3 voting controllers
 │
 ├── tests/                         # Host-side Pytest suites (run under mocked MicroPython)
-│   ├── rp2/                       # Tests executed with RP2040 (rp2) stubs loaded
+│   ├── rp2/                       # Tests executed with RP2350 (rp2) stubs loaded
 │   │   ├── unit/                  # Fast, pure-logic tests (no I/O, no transport)
 │   │   ├── sim/                   # End-to-end vote-flow tests using fake transports
 │   │   └── hil/                   # Hardware-in-the-loop tests flashing a real Pico W
@@ -58,7 +58,7 @@ To install the required Python dependencies of the RP2350, run:
 ```bash
 python -m venv venvs/rp2
 source venvs/rp2/bin/activate
-poetry install --with rp2
+poetry install --only micropython,esp32
 ```
 
 #### ESP32-C3 Virtual Environment
@@ -68,7 +68,7 @@ To install the required Python dependencies of the ESP32, run:
 ```bash
 python -m venv venvs/esp32
 source venvs/esp32/bin/activate
-poetry install --with esp32
+poetry install --only micropython,esp32
 ```
 
 #### Updating Dependencies
