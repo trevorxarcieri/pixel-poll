@@ -1,24 +1,24 @@
 repos:
-  # ---------------- RP2040 / “central” -----------------
+  # ---------------- RP2350 / “central” -----------------
   - repo: local
     hooks:
       - id: ruff-lint-rp2
         name: ruff lint (rp2)
-        entry: ./venvs/rp2/bin/ruff
+        entry: ruff
         language: system
         types: [python]
         args: ["check"]
         files: ^(src/common|src/central|tests/rp2)/
       - id: ruff-fmt-rp2
         name: ruff format (rp2)
-        entry: ./venvs/rp2/bin/ruff
+        entry: ruff
         language: system
         types: [python]
         args: ["format", "--diff"]
         files: ^(src/common|src/central|tests/rp2)/
       - id: pyright-rp2
         name: pyright (rp2)
-        entry: ./venvs/rp2/bin/pyright
+        entry: pyright
         language: system
         types: [python]
         args:
@@ -33,21 +33,21 @@ repos:
     hooks:
       - id: ruff-lint-esp32
         name: ruff lint (esp32)
-        entry: ./venvs/esp32/bin/ruff
+        entry: ruff
         language: system
         types: [python]
         args: ["check"]
         files: ^(src/common|src/central|tests/esp32)/
       - id: ruff-fmt-esp32
         name: ruff format (esp32)
-        entry: ./venvs/esp32/bin/ruff
+        entry: ruff
         language: system
         types: [python]
         args: ["format", "--diff"]
         files: ^(src/common|src/central|tests/esp32)/
       - id: pyright-esp32
         name: pyright (esp32)
-        entry: ./venvs/esp32/bin/pyright
+        entry: pyright
         language: system
         types: [python]
         args:
