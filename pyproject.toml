@@ -7,6 +7,9 @@ readme = "README.md"
 requires-python = ">=3.12,<4.0"
 dependencies = []
 
+[tool.poetry]
+package-mode = false
+
 [project.scripts]
 
 [build-system]
