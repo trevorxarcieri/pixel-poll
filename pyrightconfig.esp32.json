@@ -1,5 +1,5 @@
 {
-  "extends": "./pyrightconfig.json",
+  "reportMissingModuleSource": "none",
   "typeshedPath": "./venvs/esp32/lib/python3.12/site-packages",
   "stubPath": "./venvs/esp32/lib/python3.12/site-packages/stdlib",
   "extraPaths": ["./venvs/esp32/lib/python3.12/site-packages"]
