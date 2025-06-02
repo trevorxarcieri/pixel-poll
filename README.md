@@ -48,8 +48,10 @@ pixel-poll/                        # project root - hold pyproject.toml, README,
 To install the project and its dependencies, run:
 
 ```bash
-poetry install
+poetry install --with hw
 ```
+
+This installs the development dependencies and the hw (hardware) tooling for interacting with the MicroPython boards.
 
 #### RP2350 Virtual Environment
 
@@ -58,7 +60,7 @@ To install the required Python dependencies of the RP2350, run:
 ```bash
 python -m venv venvs/rp2
 source venvs/rp2/bin/activate
-poetry install --only micropython,esp32
+poetry install --only rp2
 ```
 
 #### ESP32-C3 Virtual Environment
@@ -68,7 +70,7 @@ To install the required Python dependencies of the ESP32, run:
 ```bash
 python -m venv venvs/esp32
 source venvs/esp32/bin/activate
-poetry install --only micropython,esp32
+poetry install --only esp32
 ```
 
 #### Updating Dependencies
@@ -77,7 +79,7 @@ When updating dependencies, you should do so using `poetry` commands on the root
 
 ```bash
 source venvs/<board>/bin/activate
-poetry sync --with <board>
+poetry sync --only <board>
 ```
 
 ## Flashing MicroPython Firmware
