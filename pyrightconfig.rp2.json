@@ -1,0 +1,5 @@
+{
+  "extends": "./pyrightconfig.json",
+  "typeshedPath": "./venvs/rp2/lib/python3.12/site-packages",
+  "stubPath": "./venvs/rp2/lib/python3.12/site-packages/stdlib"
+}
