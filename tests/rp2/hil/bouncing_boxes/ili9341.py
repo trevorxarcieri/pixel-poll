@@ -1,9 +1,11 @@
-"""ILI9341 LCD/Touch module."""
-from time import sleep
-from math import cos, sin, pi, radians
+"""ILI9341 LCD/Touch module adapted from https://github.com/rdagger/micropython-ili9341."""
+
+from math import cos, pi, radians, sin
 from sys import implementation
-from framebuf import FrameBuffer, RGB565  # type: ignore
-from micropython import const  # type: ignore
+from time import sleep
+
+from framebuf import RGB565, FrameBuffer
+from micropython import const
 
 
 def color565(r, g, b):
@@ -14,10 +16,10 @@ def color565(r, g, b):
         g (int): Green value.
         b (int): Blue value.
     """
-    return (r & 0xf8) << 8 | (g & 0xfc) << 3 | b >> 3
+    return (r & 0xF8) << 8 | (g & 0xFC) << 3 | b >> 3
 
 
-class Display(object):
+class Display:
     """Serial interface for 16-bit color (5-6-5 RGB) IL9341 display.
 
     Note:  All coordinates are zero based.
@@ -87,14 +89,27 @@ class Display(object):
         (False, 90): 0xE0,  # 1110 0000
         (False, 180): 0x40,  # 0100 0000
         (False, 270): 0x20,  # 0010 0000
-        (True, 0): 0xC0,   # 1100 0000
+        (True, 0): 0xC0,  # 1100 0000
         (True, 90): 0x60,  # 0110 0000
         (True, 180): 0x00,  # 0000 0000
-        (True, 270): 0xA0  # 1010 0000
+        (True, 270): 0xA0,  # 1010 0000
     }
 
-    def __init__(self, spi, cs, dc, rst, width=240, height=320, rotation=0,
-                 mirror=False, bgr=True, gamma=True, x_offset=0, y_offset=0):
+    def __init__(
+        self,
+        spi,
+        cs,
+        dc,
+        rst,
+        width=240,
+        height=320,
+        rotation=0,
+        mirror=False,
+        bgr=True,
+        gamma=True,
+        x_offset=0,
+        y_offset=0,
+    ):
         """Initialize OLED.
 
         Args:
@@ -146,7 +161,7 @@ class Display(object):
         self.reset()
         # Send initialization commands
         self.write_cmd(self.SWRESET)  # Software reset
-        sleep(.1)
+        sleep(0.1)
         self.write_cmd(self.PWCTRB, 0x00, 0xC1, 0x30)  # Pwr ctrl B
         self.write_cmd(self.POSC, 0x64, 0x03, 0x12, 0x81)  # Pwr on seq. ctrl
         self.write_cmd(self.DTCA, 0x85, 0x00, 0x78)  # Driver timing ctrl A
@@ -165,16 +180,46 @@ class Display(object):
         self.write_cmd(self.ENABLE3G, 0x00)  # Enable 3 gamma ctrl
         self.write_cmd(self.GAMMASET, 0x01)  # Gamma curve selected
         if gamma:  # Use custom gamma correction values
-            self.write_cmd(self.GMCTRP1, 0x0F, 0x31, 0x2B, 0x0C, 0x0E, 0x08,
-                           0x4E, 0xF1, 0x37, 0x07, 0x10, 0x03, 0x0E, 0x09,
-                           0x00)
-            self.write_cmd(self.GMCTRN1, 0x00, 0x0E, 0x14, 0x03, 0x11, 0x07,
-                           0x31, 0xC1, 0x48, 0x08, 0x0F, 0x0C, 0x31, 0x36,
-                           0x0F)
+            self.write_cmd(
+                self.GMCTRP1,
+                0x0F,
+                0x31,
+                0x2B,
+                0x0C,
+                0x0E,
+                0x08,
+                0x4E,
+                0xF1,
+                0x37,
+                0x07,
+                0x10,
+                0x03,
+                0x0E,
+                0x09,
+                0x00,
+            )
+            self.write_cmd(
+                self.GMCTRN1,
+                0x00,
+                0x0E,
+                0x14,
+                0x03,
+                0x11,
+                0x07,
+                0x31,
+                0xC1,
+                0x48,
+                0x08,
+                0x0F,
+                0x0C,
+                0x31,
+                0x36,
+                0x0F,
+            )
         self.write_cmd(self.SLPOUT)  # Exit sleep
-        sleep(.1)
+        sleep(0.1)
         self.write_cmd(self.DISPLAY_ON)  # Display on
-        sleep(.1)
+        sleep(0.1)
         self.clear()
 
     def block(self, x0, y0, x1, y1, data):
@@ -193,10 +238,8 @@ class Display(object):
             y0 += self.y_offset
             y1 += self.y_offset
 
-        self.write_cmd(self.SET_COLUMN,
-                       x0 >> 8, x0 & 0xff, x1 >> 8, x1 & 0xff)
-        self.write_cmd(self.SET_PAGE,
-                       y0 >> 8, y0 & 0xff, y1 >> 8, y1 & 0xff)
+        self.write_cmd(self.SET_COLUMN, x0 >> 8, x0 & 0xFF, x1 >> 8, x1 & 0xFF)
+        self.write_cmd(self.SET_PAGE, y0 >> 8, y0 & 0xFF, y1 >> 8, y1 & 0xFF)
         self.write_cmd(self.WRITE_RAM)
         self.write_data(data)
 
@@ -213,6 +256,7 @@ class Display(object):
         Args:
             color (Optional int): RGB565 color value (Default: 0 = Black).
             hlines (Optional int): # of horizontal lines per chunk (Default: 8)
+
         Note:
             hlines was introduced to deal with memory allocation on some
             boards.  Smaller values allocate less memory but take longer
@@ -223,8 +267,8 @@ class Display(object):
         """
         w = self.width
         h = self.height
-        assert hlines > 0 and h % hlines == 0, (
-            "hlines must be a non-zero factor of height.")
+        assert hlines > 0, "hlines must be greater than zero."
+        assert h % hlines == 0, "hlines must be a factor of height."
         # Clear display
         if color:
             line = color.to_bytes(2, 'big') * (w * hlines)
@@ -280,10 +324,12 @@ class Display(object):
         """Draw an ellipse.
 
         Args:
-            x0, y0 (int): Coordinates of center point.
+            x0 (int): X-coordinate of center point.
+            y0 (int): Y-coordinate of center point.
             a (int): Semi axis horizontal.
             b (int): Semi axis vertical.
             color (int): RGB565 color value.
+
         Note:
             The center point is the center of the x0,y0 pixel.
             Since pixels are not divisible, the axes are integer rounded
@@ -319,8 +365,7 @@ class Display(object):
             self.draw_pixel(x0 + x, y0 - y, color)
             self.draw_pixel(x0 - x, y0 - y, color)
         # Region 2
-        p = round(b2 * (x + 0.5) * (x + 0.5) +
-                  a2 * (y - 1) * (y - 1) - a2 * b2)
+        p = round(b2 * (x + 0.5) * (x + 0.5) + a2 * (y - 1) * (y - 1) - a2 * b2)
         while y > 0:
             y -= 1
             py -= twoa2
@@ -371,18 +416,15 @@ class Display(object):
             if chunk_count:
                 for c in range(0, chunk_count):
                     buf = f.read(chunk_size)
-                    self.block(x, chunk_y,
-                               x2, chunk_y + chunk_height - 1,
-                               buf)
+                    self.block(x, chunk_y, x2, chunk_y + chunk_height - 1, buf)
                     chunk_y += chunk_height
             if remainder:
                 buf = f.read(remainder * w * 2)
-                self.block(x, chunk_y,
-                           x2, chunk_y + remainder - 1,
-                           buf)
+                self.block(x, chunk_y, x2, chunk_y + remainder - 1, buf)
 
-    def draw_letter(self, x, y, letter, font, color, background=0,
-                    landscape=False, rotate_180=False):
+    def draw_letter(
+        self, x, y, letter, font, color, background=0, landscape=False, rotate_180=False
+    ):
         """Draw a letter.
 
         Args:
@@ -418,23 +460,21 @@ class Display(object):
             y -= w
             if self.is_off_grid(x, y, x + h - 1, y + w - 1):
                 return 0, 0
-            self.block(x, y,
-                       x + h - 1, y + w - 1,
-                       buf)
+            self.block(x, y, x + h - 1, y + w - 1, buf)
         else:
             if self.is_off_grid(x, y, x + w - 1, y + h - 1):
                 return 0, 0
-            self.block(x, y,
-                       x + w - 1, y + h - 1,
-                       buf)
+            self.block(x, y, x + w - 1, y + h - 1, buf)
         return w, h
 
-    def draw_line(self, x1, y1, x2, y2, color):
+    def draw_line(self, x1, y1, x2, y2, color):  # noqa: C901
         """Draw a line using Bresenham's algorithm.
 
         Args:
-            x1, y1 (int): Starting coordinates of the line
-            x2, y2 (int): Ending coordinates of the line
+            x1 (int): Starting x-coordinate of the line
+            y1 (int): Starting y-coordinate of the line
+            x2 (int): Ending x-coordinate of the line
+            y2 (int): Ending y-coordinate of the line
             color (int): RGB565 color value.
         """
         # Check for horizontal line
@@ -450,8 +490,7 @@ class Display(object):
             self.draw_vline(x1, y1, y2 - y1 + 1, color)
             return
         # Confirm coordinates in boundary
-        if self.is_off_grid(min(x1, x2), min(y1, y2),
-                            max(x1, x2), max(y1, y2)):
+        if self.is_off_grid(min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2)):
             return
         # Changes in x, y
         dx = x2 - x1
@@ -516,10 +555,12 @@ class Display(object):
 
         Args:
             sides (int): Number of polygon sides.
-            x0, y0 (int): Coordinates of center point.
+            x0 (int): X-coordinate of center point.
+            y0 (int): Y-coordinate of center point.
             r (int): Radius.
             color (int): RGB565 color value.
             rotate (Optional float): Rotation in degrees relative to origin.
+
         Note:
             The center point is the center of the x0,y0 pixel.
             Since pixels are not divisible, the radius is integer rounded
@@ -568,8 +609,18 @@ class Display(object):
             return
         self.block(x, y, x2, y2, buf)
 
-    def draw_text(self, x, y, text, font, color,  background=0,
-                  landscape=False, rotate_180=False, spacing=1):
+    def draw_text(
+        self,
+        x,
+        y,
+        text,
+        font,
+        color,
+        background=0,
+        landscape=False,
+        rotate_180=False,
+        spacing=1,
+    ):
         """Draw text.
 
         Args:
@@ -586,11 +637,12 @@ class Display(object):
         iterable_text = reversed(text) if rotate_180 else text
         for letter in iterable_text:
             # Get letter array and letter dimensions
-            w, h = self.draw_letter(x, y, letter, font, color, background,
-                                    landscape, rotate_180)
+            w, h = self.draw_letter(
+                x, y, letter, font, color, background, landscape, rotate_180
+            )
             # Stop on error
             if w == 0 or h == 0:
-                print('Invalid width {0} or height {1}'.format(w, h))
+                print(f'Invalid width {w} or height {h}')
                 return
 
             if landscape:
@@ -598,13 +650,13 @@ class Display(object):
                 if spacing:
                     self.fill_hrect(x, y - w - spacing, h, spacing, background)
                 # Position y for next letter
-                y -= (w + spacing)
+                y -= w + spacing
             else:
                 # Fill in spacing
                 if spacing:
                     self.fill_hrect(x + w, y, spacing, h, background)
                 # Position x for next letter
-                x += (w + spacing)
+                x += w + spacing
 
                 # # Fill in spacing
                 # if spacing:
@@ -612,8 +664,7 @@ class Display(object):
                 # # Position x for next letter
                 # x += w + spacing
 
-    def draw_text8x8(self, x, y, text, color,  background=0,
-                     rotate=0):
+    def draw_text8x8(self, x, y, text, color, background=0, rotate=0):  # noqa: C901
         """Draw text using built-in MicroPython 8x8 bit font.
 
         Args:
@@ -645,24 +696,21 @@ class Display(object):
             fbuf2 = FrameBuffer(buf2, h, w, RGB565)
             for y1 in range(h):
                 for x1 in range(w):
-                    fbuf2.pixel(y1, x1,
-                                fbuf.pixel(x1, (h - 1) - y1))
+                    fbuf2.pixel(y1, x1, fbuf.pixel(x1, (h - 1) - y1))
             self.block(x, y, x + (h - 1), y + w - 1, buf2)
         elif rotate == 180:
             buf2 = bytearray(w * 16)
             fbuf2 = FrameBuffer(buf2, w, h, RGB565)
             for y1 in range(h):
                 for x1 in range(w):
-                    fbuf2.pixel(x1, y1,
-                                fbuf.pixel((w - 1) - x1, (h - 1) - y1))
+                    fbuf2.pixel(x1, y1, fbuf.pixel((w - 1) - x1, (h - 1) - y1))
             self.block(x, y, x + w - 1, y + (h - 1), buf2)
         elif rotate == 270:
             buf2 = bytearray(w * 16)
             fbuf2 = FrameBuffer(buf2, h, w, RGB565)
             for y1 in range(h):
                 for x1 in range(w):
-                    fbuf2.pixel(y1, x1,
-                                fbuf.pixel((w - 1) - x1, y1))
+                    fbuf2.pixel(y1, x1, fbuf.pixel((w - 1) - x1, y1))
             self.block(x, y, x + (h - 1), y + w - 1, buf2)
 
     def draw_vline(self, x, y, h, color):
@@ -712,10 +760,12 @@ class Display(object):
         """Draw a filled ellipse.
 
         Args:
-            x0, y0 (int): Coordinates of center point.
+            x0 (int): X-coordinate of center point.
+            y0 (int): Y-coordinate of center point.
             a (int): Semi axis horizontal.
             b (int): Semi axis vertical.
             color (int): RGB565 color value.
+
         Note:
             The center point is the center of the x0,y0 pixel.
             Since pixels are not divisible, the axes are integer rounded
@@ -746,8 +796,7 @@ class Display(object):
             self.draw_line(x0 + x, y0 - y, x0 + x, y0 + y, color)
             self.draw_line(x0 - x, y0 - y, x0 - x, y0 + y, color)
         # Region 2
-        p = round(b2 * (x + 0.5) * (x + 0.5) +
-                  a2 * (y - 1) * (y - 1) - a2 * b2)
+        p = round(b2 * (x + 0.5) * (x + 0.5) + a2 * (y - 1) * (y - 1) - a2 * b2)
         while y > 0:
             y -= 1
             py -= twoa2
@@ -779,16 +828,12 @@ class Display(object):
         if chunk_count:
             buf = color.to_bytes(2, 'big') * chunk_size
             for c in range(0, chunk_count):
-                self.block(x, chunk_y,
-                           x + w - 1, chunk_y + chunk_height - 1,
-                           buf)
+                self.block(x, chunk_y, x + w - 1, chunk_y + chunk_height - 1, buf)
                 chunk_y += chunk_height
 
         if remainder:
             buf = color.to_bytes(2, 'big') * remainder * w
-            self.block(x, chunk_y,
-                       x + w - 1, chunk_y + remainder - 1,
-                       buf)
+            self.block(x, chunk_y, x + w - 1, chunk_y + remainder - 1, buf)
 
     def fill_rectangle(self, x, y, w, h, color):
         """Draw a filled rectangle.
@@ -807,15 +852,17 @@ class Display(object):
         else:
             self.fill_vrect(x, y, w, h, color)
 
-    def fill_polygon(self, sides, x0, y0, r, color, rotate=0):
+    def fill_polygon(self, sides, x0, y0, r, color, rotate=0):  # noqa: C901
         """Draw a filled n-sided regular polygon.
 
         Args:
             sides (int): Number of polygon sides.
-            x0, y0 (int): Coordinates of center point.
+            x0 (int): X-coordinate of center point.
+            y0 (int): Y-coordinate of center point.
             r (int): Radius.
             color (int): RGB565 color value.
             rotate (Optional float): Rotation in degrees relative to origin.
+
         Note:
             The center point is the center of the x0,y0 pixel.
             Since pixels are not divisible, the radius is integer rounded
@@ -908,16 +955,12 @@ class Display(object):
         if chunk_count:
             buf = color.to_bytes(2, 'big') * chunk_size
             for c in range(0, chunk_count):
-                self.block(chunk_x, y,
-                           chunk_x + chunk_width - 1, y + h - 1,
-                           buf)
+                self.block(chunk_x, y, chunk_x + chunk_width - 1, y + h - 1, buf)
                 chunk_x += chunk_width
 
         if remainder:
             buf = color.to_bytes(2, 'big') * remainder * h
-            self.block(chunk_x, y,
-                       chunk_x + remainder - 1, y + h - 1,
-                       buf)
+            self.block(chunk_x, y, chunk_x + remainder - 1, y + h - 1, buf)
 
     def invert(self, enable=True):
         """Enables or disables inversion of display colors.
@@ -938,22 +981,21 @@ class Display(object):
             ymin (int): Minimum vertical pixel.
             xmax (int): Maximum horizontal pixel.
             ymax (int): Maximum vertical pixel.
+
         Returns:
             boolean: False = Coordinates OK, True = Error.
         """
         if xmin < 0:
-            print('x-coordinate: {0} below minimum of 0.'.format(xmin))
+            print(f'x-coordinate: {xmin} below minimum of 0.')
             return True
         if ymin < 0:
-            print('y-coordinate: {0} below minimum of 0.'.format(ymin))
+            print(f'y-coordinate: {ymin} below minimum of 0.')
             return True
         if xmax >= self.width:
-            print('x-coordinate: {0} above maximum of {1}.'.format(
-                xmax, self.width - 1))
+            print(f'x-coordinate: {xmax} above maximum of {self.width - 1}.')
             return True
         if ymax >= self.height:
-            print('y-coordinate: {0} above maximum of {1}.'.format(
-                ymax, self.height - 1))
+            print(f'y-coordinate: {ymax} above maximum of {self.height - 1}.')
             return True
         return False
 
@@ -964,6 +1006,7 @@ class Display(object):
             path (string): Image file path.
             w (int): Width of image.
             h (int): Height of image.
+
         Notes:
             w x h cannot exceed 2048 on boards w/o PSRAM
         """
@@ -977,9 +1020,9 @@ class Display(object):
         Notes: CircuitPython implemntation
         """
         self.rst.value = False
-        sleep(.05)
+        sleep(0.05)
         self.rst.value = True
-        sleep(.05)
+        sleep(0.05)
 
     def reset_mpy(self):
         """Perform reset: Low=initialization, High=normal operation.
@@ -987,9 +1030,9 @@ class Display(object):
         Notes: MicroPython implemntation
         """
         self.rst(0)
-        sleep(.05)
+        sleep(0.05)
         self.rst(1)
-        sleep(.05)
+        sleep(0.05)
 
     def scroll(self, y):
         """Scroll display vertically.
@@ -1008,13 +1051,15 @@ class Display(object):
         """
         if top + bottom <= self.height:
             middle = self.height - (top + bottom)
-            self.write_cmd(self.VSCRDEF,
-                           top >> 8,
-                           top & 0xFF,
-                           middle >> 8,
-                           middle & 0xFF,
-                           bottom >> 8,
-                           bottom & 0xFF)
+            self.write_cmd(
+                self.VSCRDEF,
+                top >> 8,
+                top & 0xFF,
+                middle >> 8,
+                middle & 0xFF,
+                bottom >> 8,
+                bottom & 0xFF,
+            )
 
     def sleep(self, enable=True):
         """Enters or exits sleep mode.
