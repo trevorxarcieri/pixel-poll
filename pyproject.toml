@@ -31,7 +31,7 @@ optional = true
 
 [tool.poetry.group.esp32.dependencies]
 esptool = "^4.8.1"
-micropython-esp32-esp32-generic-c3-stubs = "^1.23.0.post2"
+micropython-esp32-esp32-generic-stubs = "^1.25.0.post2"
 
 [tool.poetry.group.rp2]
 optional = true
