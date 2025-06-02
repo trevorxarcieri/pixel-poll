@@ -2,47 +2,57 @@ repos:
   # ---------------- RP2040 / “central” -----------------
   - repo: local
     hooks:
-      - id: black-rp2
-        name: black (rp2)
-        entry: ./venvs/rp2/bin/black
-        language: system
-        types: [python]
-        files: ^(src/common|src/central|tests/rp2)/
-      - id: ruff-rp2
-        name: ruff (rp2)
+      - id: ruff-lint-rp2
+        name: ruff lint (rp2)
         entry: ./venvs/rp2/bin/ruff
         language: system
         types: [python]
         args: ["check"]
         files: ^(src/common|src/central|tests/rp2)/
-      - id: pylint-rp2
-        name: pylint (rp2)
-        entry: ./venvs/rp2/bin/pylint
+      - id: ruff-fmt-rp2
+        name: ruff format (rp2)
+        entry: ./venvs/rp2/bin/ruff
         language: system
         types: [python]
-        args: ["--prefer-stubs=y"]
+        args: ["format", "--diff"]
+        files: ^(src/common|src/central|tests/rp2)/
+      - id: pyright-rp2
+        name: pyright (rp2)
+        entry: ./venvs/rp2/bin/pyright
+        language: system
+        types: [python]
+        args:
+          [
+            "--pythonpath=./venvs/rp2/bin/python",
+            "--project=pyrightconfig.rp2.json",
+          ]
         files: ^(src/common|src/central|tests/rp2)/
 
   # ---------------- ESP32-C3 / “controller” ------------
   - repo: local
     hooks:
-      - id: black-esp32
-        name: black (esp32)
-        entry: ./venvs/esp32/bin/black
-        language: system
-        types: [python]
-        files: ^(src/common|src/controller|tests/esp32)/
-      - id: ruff-esp32
-        name: ruff (esp32)
+      - id: ruff-lint-esp32
+        name: ruff lint (esp32)
         entry: ./venvs/esp32/bin/ruff
         language: system
         types: [python]
         args: ["check"]
-        files: ^(src/common|src/controller|tests/esp32)/
-      - id: pylint-esp32
-        name: pylint (esp32)
-        entry: ./venvs/esp32/bin/pylint
+        files: ^(src/common|src/central|tests/esp32)/
+      - id: ruff-fmt-esp32
+        name: ruff format (esp32)
+        entry: ./venvs/esp32/bin/ruff
         language: system
         types: [python]
-        args: ["--prefer-stubs=y"]
-        files: ^(src/common|src/controller|tests/esp32)/
+        args: ["format", "--diff"]
+        files: ^(src/common|src/central|tests/esp32)/
+      - id: pyright-esp32
+        name: pyright (esp32)
+        entry: ./venvs/esp32/bin/pyright
+        language: system
+        types: [python]
+        args:
+          [
+            "--pythonpath=./venvs/esp32/bin/python",
+            "--project=pyrightconfig.esp32.json",
+          ]
+        files: ^(src/common|src/central|tests/esp32)/
