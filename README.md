@@ -81,6 +81,15 @@ poetry run mig-stubs-fmt
 
 This updates the installed micropython stubs to be in a format that is recognized by the other Python tooling used in the repo, such as Pylint.
 
+#### Updating Dependencies
+
+When updating dependencies, you should do so using `poetry` commands on the root poetry virtual environment, *not* in the individual board environments. After doing so, you should run the following commands for each board to update the board-specific virtual environments:
+
+```bash
+source venvs/<board>/bin/activate
+poetry sync --with <board>
+```
+
 ## Flashing MicroPython Firmware
 
 ### Raspberry Pi Pico 2 W Firmware
