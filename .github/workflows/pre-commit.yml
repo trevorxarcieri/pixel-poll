@@ -28,7 +28,7 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
-          version: 1.8.2 # pin so resolution is reproducible
+          version: 2.1.3 # pin so resolution is reproducible
 
       # 3. Cache Poetry’s download / build artifacts and virtual environments
       - name: Cache Poetry cache dir & virtual-envs
