@@ -1,12 +1,13 @@
 """ILI9341 demo (bouncing boxes)."""
 
-from machine import Pin, SPI  # type: ignore
 from random import random, seed
+
 from ili9341 import Display, color565
-from utime import sleep_us, ticks_cpu, ticks_us, ticks_diff  # type: ignore
+from machine import SPI, Pin
+from utime import sleep_us, ticks_cpu, ticks_diff, ticks_us
 
 
-class Box(object):
+class Box:
     """Bouncing box."""
 
     def __init__(self, screen_width, screen_height, size, display, color):
