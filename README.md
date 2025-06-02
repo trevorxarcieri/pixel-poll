@@ -71,16 +71,6 @@ source venvs/esp32/bin/activate
 poetry install --with esp32
 ```
 
-#### Migrate Stub Format
-
-To migrate the stub format for the RP2350 and ESP32-C3, run:
-
-```bash
-poetry run mig-stubs-fmt
-```
-
-This updates the installed micropython stubs to be in a format that is recognized by the other Python tooling used in the repo, such as Pylint.
-
 #### Updating Dependencies
 
 When updating dependencies, you should do so using `poetry` commands on the root poetry virtual environment, *not* in the individual board environments. After doing so, you should run the following commands for each board to update the board-specific virtual environments:
