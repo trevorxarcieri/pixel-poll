@@ -2,7 +2,8 @@ exclude = []
 
 [lint]
 extend-select = [
-    "D", # pydocstyle
+    "D",    # pydocstyle
+    "ANN0", # missing-type-*
 
     "C901",    # complex-structure
     "I",       # isort
@@ -60,7 +61,7 @@ ignore = [
     "UP015",   # redundant-open-modes, explicit is preferred
     "UP038",   # Using `X | Y` in `isinstance` call is slower and more verbose https://github.com/astral-sh/ruff/issues/7871
     # Only enforcing return type annotations for public functions
-    "ANN202", # missing-return-type-private-function
+    # "ANN202", # missing-return-type-private-function
     "ANN204", # missing-return-type-special-method
 ]
 
@@ -92,7 +93,7 @@ sections.eager = ["_distutils_hack"]
 sections.delayed = ["distutils"]
 
 [lint.flake8-annotations]
-ignore-fully-untyped = true
+# ignore-fully-untyped = true
 
 [format]
 # Enable preview to get hugged parenthesis unwrapping and other nice surprises
