@@ -1,7 +1,6 @@
 import neopixel
+from ble_vote_controller import BleVoteController
 from machine import Pin
-
-from controller import vote
 
 PIXEL_PIN = 8  # GPIO your board uses for the NeoPixel
 NUM_PIXELS = 1  # there is only one on-board LED
@@ -22,6 +21,6 @@ def rx_callback(payload: bytes) -> None:
         np.write()
 
 
-voter = vote.BleVoteController(name="ESP32-A", on_rx=rx_callback)
+voter = BleVoteController(name="ESP32-A", on_rx=rx_callback)
 voter.vote_yes()  # or .vote_no()
 voter.send("ACK")  # arbitrary string/bytes
