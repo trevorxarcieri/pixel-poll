@@ -1,1 +1,9 @@
-.vscode
+# VS Code Settings
+.vscode 
+
+# Virtual Environments
+venvs/*
+
+# Caches
+.ruff_cache
+__pycache__

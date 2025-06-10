@@ -1,0 +1,46 @@
+[project]
+name = "pixel-poll"
+version = "0.1.0"
+description = "An embedded game night voting system project for my computer engineering capstone class. The project involves multiple voting controllers and one central module, where the central module is used to facilitate a vote and people can use their voting controllers to cast a vote."
+authors = [{ name = "trevorxarcieri", email = "agent.steel.ta@gmail.com" }]
+readme = "README.md"
+requires-python = ">=3.12,<4.0"
+dependencies = []
+
+[tool.poetry]
+package-mode = false
+
+[project.scripts]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.11.11"
+pyright = "^1.1.401"
+pre-commit = "^4.2.0"
+pytest = "^8.3.5"
+pytest-xdist = "^3.7.0"
+pytest-asyncio = "^1.0.0"
+
+[tool.poetry.group.hw]
+optional = true
+
+[tool.poetry.group.hw.dependencies]
+mpremote = "^1.25.0"
+esptool = "^4.8.1"
+
+[tool.poetry.group.esp32]
+optional = true
+
+[tool.poetry.group.esp32.dependencies]
+micropython-stdlib-stubs = "^1.25.0"
+micropython-esp32-esp32-generic-stubs = "^1.25.0.post2"
+
+[tool.poetry.group.rp2]
+optional = true
+
+[tool.poetry.group.rp2.dependencies]
+micropython-stdlib-stubs = "^1.25.0"
+micropython-rp2-rpi-pico-w-stubs = "^1.25.0.post1"
