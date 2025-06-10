@@ -1,4 +1,4 @@
-"""Module containing the VoteBLE class for ESP32 BLE voting.
+"""Module containing the BleVoteController class for ESP32 BLE voting.
 
 vote.py  --  MicroPython ≥1.20 on ESP32
 

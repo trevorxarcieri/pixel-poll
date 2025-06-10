@@ -1,4 +1,4 @@
-"""Module containing the VoteCentral class for RP2350 BLE voting.
+"""Module containing the BleVoteManager class for RP2350 BLE voting.
 
 vote.py  --  MicroPython central-role helper for the “vote” project
 
@@ -13,9 +13,6 @@ Usage example
 
     asyncio.run(asyncio.sleep(60))  # keep main script alive
 """
-
-# TODO: fix name at top
-# TODO: fix names of vote files
 
 import struct
 from collections.abc import Callable
