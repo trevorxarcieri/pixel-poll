@@ -34,6 +34,8 @@ extend-select = [
 ]
 
 ignore = [
+    "D104", # undocumented-public-package
+
     # Typeshed rejects complex or non-literal defaults for maintenance and testing reasons,
     # irrelevant to this project.
     "PYI011", # typed-argument-default-in-stub
@@ -71,6 +73,7 @@ convention = "google"
 [lint.extend-per-file-ignores]
 "tests/*" = [
     "D100", # missing docstring in public module
+    "ANN",  # missing type annotations
 ]
 
 [lint.isort]
