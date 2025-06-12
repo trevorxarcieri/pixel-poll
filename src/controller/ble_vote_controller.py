@@ -1,6 +1,6 @@
 """Module containing the BleVoteController class for ESP32 BLE voting.
 
-vote.py  --  MicroPython ≥1.20 on ESP32
+ble_vote_controller.py  --  MicroPython ≥1.20 on ESP32
 
 A tiny helper class to:
   * advertise a custom Vote Service
@@ -15,8 +15,6 @@ Your main state machine only needs:
 """
 
 import struct
-from collections.abc import Callable
-from typing import cast
 
 import bluetooth
 from micropython import const
@@ -25,7 +23,7 @@ from micropython import const
 _VOTE_SVC_UUID = bluetooth.UUID("12345678-1234-5678-1234-56789abcdef0")
 _TX_CHAR_UUID = bluetooth.UUID(
     "12345678-1234-5678-1234-56789abcdef1"
-)  # ESP32 ➜ RP2350  (notify)
+)  # ESP32 ➜ RP2350 (notify)
 _RX_CHAR_UUID = bluetooth.UUID(
     "12345678-1234-5678-1234-56789abcdef2"
 )  # RP2350 ➜ ESP32 (write)
@@ -56,7 +54,7 @@ def _adv_payload(
     _append(0x09, name)  # Complete Local Name
     if services:
         for uuid in services:
-            b = cast(bytes, uuid)
+            b = bytes(uuid)  # type: ignore[reportArgumentType]
             _append(0x03 if len(b) == 2 else 0x07, b)
     return payload
 
@@ -69,7 +67,7 @@ class BleVoteController:
         self,
         ble: bluetooth.BLE | None = None,
         name: str = "ESP32-Vote",
-        on_rx: Callable[[bytes], None] | None = None,
+        on_rx=None,  # noqa: ANN001
         adv_interval_us: int = 500_000,
     ):
         """Initialize the BLE vote service."""
@@ -105,7 +103,7 @@ class BleVoteController:
             msg = msg.encode()
         for conn in self._connections:
             try:
-                self._ble.gatts_notify(self._tx_handle, msg)
+                self._ble.gatts_notify(int(conn), self._tx_handle, msg)  # type: ignore[reportCallIssue]
             except OSError:  # Link might have dropped
                 self._connections.discard(conn)
 
@@ -126,7 +124,21 @@ class BleVoteController:
         return tx_handle, rx_handle
 
     def _advertise(self, interval_us: int = 500_000) -> None:
-        self._ble.gap_advertise(interval_us, self._payload)
+        """(Re)start advertising.
+
+        Ignore the “already advertising” race that can
+        happen immediately after a disconnect.
+        """
+        try:
+            self._ble.gap_advertise(None)  # type: ignore[reportArgumentType] stop if already running
+        except OSError:
+            pass  # no advert → ENOENT, ignore
+
+        try:
+            self._ble.gap_advertise(interval_us, self._payload)
+        except OSError as err:
+            if err.args[0] != -30:  # BLE_HS_EALREADY
+                raise  # re-raise unknown errors
 
     def _irq(self, event: int, data: tuple[memoryview[int], ...]) -> None:
         if event == _IRQ_CENTRAL_CONNECT:
@@ -142,7 +154,7 @@ class BleVoteController:
             self._advertise()
 
         elif event == _IRQ_GATTS_WRITE:
-            conn_handle, attr_handle, _ = data
+            conn_handle, attr_handle = data
             if attr_handle == self._rx_handle:
                 raw = self._ble.gatts_read(self._rx_handle)
                 if self._on_rx:
