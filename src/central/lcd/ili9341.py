@@ -1,14 +1,15 @@
 """ILI9341 LCD/Touch module adapted from https://github.com/rdagger/micropython-ili9341."""
 
 from math import cos, pi, radians, sin
-from sys import implementation
 from time import sleep
 
 from framebuf import RGB565, FrameBuffer
+from lcd.xglcd_font import XglcdFont
+from machine import SPI, Pin
 from micropython import const
 
 
-def color565(r, g, b):
+def color565(r: int, g: int, b: int) -> int:
     """Return RGB565 color value.
 
     Args:
@@ -97,23 +98,23 @@ class Display:
 
     def __init__(
         self,
-        spi,
-        cs,
-        dc,
-        rst,
-        width=240,
-        height=320,
-        rotation=0,
-        mirror=False,
-        bgr=True,
-        gamma=True,
-        x_offset=0,
-        y_offset=0,
+        spi: SPI,
+        cs: Pin,
+        dc: Pin,
+        rst: Pin,
+        width: int = 240,
+        height: int = 320,
+        rotation: int = 0,
+        mirror: bool = False,
+        bgr: bool = True,
+        gamma: bool = True,
+        x_offset: int = 0,
+        y_offset: int = 0,
     ):
         """Initialize OLED.
 
         Args:
-            spi (Class Spi):  SPI interface for OLED
+            spi (Class SPI):  SPI interface for OLED
             cs (Class Pin):  Chip select pin
             dc (Class Pin):  Data/Command pin
             rst (Class Pin):  Reset pin
@@ -144,20 +145,12 @@ class Display:
         self.y_offset = y_offset
 
         # Initialize GPIO pins and set implementation specific methods
-        if implementation.name == 'circuitpython':
-            self.cs.switch_to_output(value=True)
-            self.dc.switch_to_output(value=False)
-            self.rst.switch_to_output(value=True)
-            self.reset = self.reset_cpy
-            self.write_cmd = self.write_cmd_cpy
-            self.write_data = self.write_data_cpy
-        else:
-            self.cs.init(self.cs.OUT, value=1)
-            self.dc.init(self.dc.OUT, value=0)
-            self.rst.init(self.rst.OUT, value=1)
-            self.reset = self.reset_mpy
-            self.write_cmd = self.write_cmd_mpy
-            self.write_data = self.write_data_mpy
+        self.cs.init(self.cs.OUT, value=1)
+        self.dc.init(self.dc.OUT, value=0)
+        self.rst.init(self.rst.OUT, value=1)
+        self.reset = self.reset_mpy
+        self.write_cmd = self.write_cmd_mpy
+        self.write_data = self.write_data_mpy
         self.reset()
         # Send initialization commands
         self.write_cmd(self.SWRESET)  # Software reset
@@ -222,7 +215,7 @@ class Display:
         sleep(0.1)
         self.clear()
 
-    def block(self, x0, y0, x1, y1, data):
+    def block(self, x0: int, y0: int, x1: int, y1: int, data: bytes) -> None:
         """Write a block of data to display.
 
         Args:
@@ -243,14 +236,14 @@ class Display:
         self.write_cmd(self.WRITE_RAM)
         self.write_data(data)
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         """Clean up resources."""
         self.clear()
         self.display_off()
         self.spi.deinit()
         print('display off')
 
-    def clear(self, color=0, hlines=8):
+    def clear(self, color: int = 0, hlines: int = 8) -> None:
         """Clear display.
 
         Args:
@@ -277,15 +270,15 @@ class Display:
         for y in range(0, h, hlines):
             self.block(0, y, w - 1, y + hlines - 1, line)
 
-    def display_off(self):
+    def display_off(self) -> None:
         """Turn display off."""
         self.write_cmd(self.DISPLAY_OFF)
 
-    def display_on(self):
+    def display_on(self) -> None:
         """Turn display on."""
         self.write_cmd(self.DISPLAY_ON)
 
-    def draw_circle(self, x0, y0, r, color):
+    def draw_circle(self, x0: int, y0: int, r: int, color: int) -> None:
         """Draw a circle.
 
         Args:
@@ -320,7 +313,7 @@ class Display:
             self.draw_pixel(x0 + y, y0 - x, color)
             self.draw_pixel(x0 - y, y0 - x, color)
 
-    def draw_ellipse(self, x0, y0, a, b, color):
+    def draw_ellipse(self, x0: int, y0: int, a: int, b: int, color: int) -> None:
         """Draw an ellipse.
 
         Args:
@@ -380,7 +373,7 @@ class Display:
             self.draw_pixel(x0 + x, y0 - y, color)
             self.draw_pixel(x0 - x, y0 - y, color)
 
-    def draw_hline(self, x, y, w, color):
+    def draw_hline(self, x: int, y: int, w: int, color: int) -> None:
         """Draw a horizontal line.
 
         Args:
@@ -394,7 +387,9 @@ class Display:
         line = color.to_bytes(2, 'big') * w
         self.block(x, y, x + w - 1, y, line)
 
-    def draw_image(self, path, x=0, y=0, w=320, h=240):
+    def draw_image(
+        self, path: str, x: int = 0, y: int = 0, w: int = 320, h: int = 240
+    ) -> None:
         """Draw image from flash.
 
         Args:
@@ -423,8 +418,16 @@ class Display:
                 self.block(x, chunk_y, x2, chunk_y + remainder - 1, buf)
 
     def draw_letter(
-        self, x, y, letter, font, color, background=0, landscape=False, rotate_180=False
-    ):
+        self,
+        x: int,
+        y: int,
+        letter: str,
+        font: XglcdFont,
+        color: int,
+        background: int = 0,
+        landscape: bool = False,
+        rotate_180: bool = False,
+    ) -> tuple[int, int]:
         """Draw a letter.
 
         Args:
@@ -467,7 +470,7 @@ class Display:
             self.block(x, y, x + w - 1, y + h - 1, buf)
         return w, h
 
-    def draw_line(self, x1, y1, x2, y2, color):  # noqa: C901
+    def draw_line(self, x1: int, y1: int, x2: int, y2: int, color: int) -> None:  # noqa: C901
         """Draw a line using Bresenham's algorithm.
 
         Args:
@@ -523,7 +526,7 @@ class Display:
                 y += ystep
                 error += dx
 
-    def draw_lines(self, coords, color):
+    def draw_lines(self, coords: list[tuple[int, int]], color: int) -> None:
         """Draw multiple lines.
 
         Args:
@@ -538,7 +541,7 @@ class Display:
             self.draw_line(x1, y1, x2, y2, color)
             x1, y1 = x2, y2
 
-    def draw_pixel(self, x, y, color):
+    def draw_pixel(self, x: int, y: int, color: int) -> None:
         """Draw a single pixel.
 
         Args:
@@ -550,7 +553,9 @@ class Display:
             return
         self.block(x, y, x, y, color.to_bytes(2, 'big'))
 
-    def draw_polygon(self, sides, x0, y0, r, color, rotate=0):
+    def draw_polygon(
+        self, sides: int, x0: int, y0: int, r: int, color: int, rotate: float = 0
+    ) -> None:
         """Draw an n-sided regular polygon.
 
         Args:
@@ -576,7 +581,7 @@ class Display:
         # Cast to python float first to fix rounding errors
         self.draw_lines(coords, color=color)
 
-    def draw_rectangle(self, x, y, w, h, color):
+    def draw_rectangle(self, x: int, y: int, w: int, h: int, color: int) -> None:
         """Draw a rectangle.
 
         Args:
@@ -593,7 +598,7 @@ class Display:
         self.draw_vline(x, y, h, color)
         self.draw_vline(x2, y, h, color)
 
-    def draw_sprite(self, buf, x, y, w, h):
+    def draw_sprite(self, buf: bytes, x: int, y: int, w: int, h: int) -> None:
         """Draw a sprite (optimized for horizontal drawing).
 
         Args:
@@ -611,16 +616,16 @@ class Display:
 
     def draw_text(
         self,
-        x,
-        y,
-        text,
-        font,
-        color,
-        background=0,
-        landscape=False,
-        rotate_180=False,
-        spacing=1,
-    ):
+        x: int,
+        y: int,
+        text: str,
+        font: XglcdFont,
+        color: int,
+        background: int = 0,
+        landscape: bool = False,
+        rotate_180: bool = False,
+        spacing: int = 1,
+    ) -> None:
         """Draw text.
 
         Args:
@@ -634,6 +639,9 @@ class Display:
             rotate_180 (bool): Rotate text by 180 degrees
             spacing (int): Pixels between letters (default: 1)
         """
+        if landscape:
+            y = self.height - y - 1  # Adjust y for landscape
+
         iterable_text = reversed(text) if rotate_180 else text
         for letter in iterable_text:
             # Get letter array and letter dimensions
@@ -664,7 +672,15 @@ class Display:
                 # # Position x for next letter
                 # x += w + spacing
 
-    def draw_text8x8(self, x, y, text, color, background=0, rotate=0):  # noqa: C901
+    def draw_text8x8(  # noqa: C901
+        self,
+        x: int,
+        y: int,
+        text: str,
+        color: int,
+        background: int = 0,
+        rotate: int = 0,
+    ) -> None:
         """Draw text using built-in MicroPython 8x8 bit font.
 
         Args:
@@ -713,7 +729,7 @@ class Display:
                     fbuf2.pixel(y1, x1, fbuf.pixel((w - 1) - x1, y1))
             self.block(x, y, x + (h - 1), y + w - 1, buf2)
 
-    def draw_vline(self, x, y, h, color):
+    def draw_vline(self, x: int, y: int, h: int, color: int) -> None:
         """Draw a vertical line.
 
         Args:
@@ -728,7 +744,7 @@ class Display:
         line = color.to_bytes(2, 'big') * h
         self.block(x, y, x, y + h - 1, line)
 
-    def fill_circle(self, x0, y0, r, color):
+    def fill_circle(self, x0: int, y0: int, r: int, color: int) -> None:
         """Draw a filled circle.
 
         Args:
@@ -756,7 +772,7 @@ class Display:
             self.draw_vline(x0 - y, y0 - x, 2 * x + 1, color)
             self.draw_vline(x0 + y, y0 - x, 2 * x + 1, color)
 
-    def fill_ellipse(self, x0, y0, a, b, color):
+    def fill_ellipse(self, x0: int, y0: int, a: int, b: int, color: int) -> None:
         """Draw a filled ellipse.
 
         Args:
@@ -809,7 +825,7 @@ class Display:
             self.draw_line(x0 + x, y0 - y, x0 + x, y0 + y, color)
             self.draw_line(x0 - x, y0 - y, x0 - x, y0 + y, color)
 
-    def fill_hrect(self, x, y, w, h, color):
+    def fill_hrect(self, x: int, y: int, w: int, h: int, color: int) -> None:
         """Draw a filled rectangle (optimized for horizontal drawing).
 
         Args:
@@ -835,7 +851,7 @@ class Display:
             buf = color.to_bytes(2, 'big') * remainder * w
             self.block(x, chunk_y, x + w - 1, chunk_y + remainder - 1, buf)
 
-    def fill_rectangle(self, x, y, w, h, color):
+    def fill_rectangle(self, x: int, y: int, w: int, h: int, color: int) -> None:
         """Draw a filled rectangle.
 
         Args:
@@ -852,7 +868,9 @@ class Display:
         else:
             self.fill_vrect(x, y, w, h, color)
 
-    def fill_polygon(self, sides, x0, y0, r, color, rotate=0):  # noqa: C901
+    def fill_polygon(  # noqa: C901
+        self, sides: int, x0: int, y0: int, r: int, color: int, rotate: float = 0
+    ) -> None:
         """Draw a filled n-sided regular polygon.
 
         Args:
@@ -936,7 +954,7 @@ class Display:
         for y, x in xdict.items():
             self.draw_hline(x[0], y, x[1] - x[0] + 2, color)
 
-    def fill_vrect(self, x, y, w, h, color):
+    def fill_vrect(self, x: int, y: int, w: int, h: int, color: int) -> None:
         """Draw a filled rectangle (optimized for vertical drawing).
 
         Args:
@@ -962,7 +980,7 @@ class Display:
             buf = color.to_bytes(2, 'big') * remainder * h
             self.block(chunk_x, y, chunk_x + remainder - 1, y + h - 1, buf)
 
-    def invert(self, enable=True):
+    def invert(self, enable: bool = True) -> None:
         """Enables or disables inversion of display colors.
 
         Args:
@@ -973,7 +991,7 @@ class Display:
         else:
             self.write_cmd(self.INVOFF)
 
-    def is_off_grid(self, xmin, ymin, xmax, ymax):
+    def is_off_grid(self, xmin: int, ymin: int, xmax: int, ymax: int) -> bool:
         """Check if coordinates extend past display boundaries.
 
         Args:
@@ -999,11 +1017,11 @@ class Display:
             return True
         return False
 
-    def load_sprite(self, path, w, h):
+    def load_sprite(self, path: str, w: int, h: int) -> bytes:
         """Load sprite image.
 
         Args:
-            path (string): Image file path.
+            path (str): Image file path.
             w (int): Width of image.
             h (int): Height of image.
 
@@ -1014,17 +1032,17 @@ class Display:
         with open(path, "rb") as f:
             return f.read(buf_size)
 
-    def reset_cpy(self):
+    def reset_cpy(self) -> None:
         """Perform reset: Low=initialization, High=normal operation.
 
         Notes: CircuitPython implemntation
         """
-        self.rst.value = False
+        self.rst.value = False  # type: ignore[reportAttributeAccessIssue]
         sleep(0.05)
-        self.rst.value = True
+        self.rst.value = True  # type: ignore[reportAttributeAccessIssue]
         sleep(0.05)
 
-    def reset_mpy(self):
+    def reset_mpy(self) -> None:
         """Perform reset: Low=initialization, High=normal operation.
 
         Notes: MicroPython implemntation
@@ -1034,7 +1052,7 @@ class Display:
         self.rst(1)
         sleep(0.05)
 
-    def scroll(self, y):
+    def scroll(self, y: int) -> None:
         """Scroll display vertically.
 
         Args:
@@ -1042,7 +1060,7 @@ class Display:
         """
         self.write_cmd(self.VSCRSADD, y >> 8, y & 0xFF)
 
-    def set_scroll(self, top, bottom):
+    def set_scroll(self, top: int, bottom: int) -> None:
         """Set the height of the top and bottom scroll margins.
 
         Args:
@@ -1061,7 +1079,7 @@ class Display:
                 bottom & 0xFF,
             )
 
-    def sleep(self, enable=True):
+    def sleep(self, enable: bool = True) -> None:
         """Enters or exits sleep mode.
 
         Args:
@@ -1072,12 +1090,12 @@ class Display:
         else:
             self.write_cmd(self.SLPOUT)
 
-    def write_cmd_mpy(self, command, *args):
+    def write_cmd_mpy(self, command: int, *args: int) -> None:
         """Write command to OLED (MicroPython).
 
         Args:
-            command (byte): ILI9341 command code.
-            *args (optional bytes): Data to transmit.
+            command (int): ILI9341 command code.
+            *args (optional int): Data to transmit.
         """
         self.dc(0)
         self.cs(0)
@@ -1087,26 +1105,26 @@ class Display:
         if len(args) > 0:
             self.write_data(bytearray(args))
 
-    def write_cmd_cpy(self, command, *args):
+    def write_cmd_cpy(self, command: int, *args: int) -> None:
         """Write command to OLED (CircuitPython).
 
         Args:
-            command (byte): ILI9341 command code.
-            *args (optional bytes): Data to transmit.
+            command (int): ILI9341 command code.
+            *args (optional int): Data to transmit.
         """
-        self.dc.value = False
-        self.cs.value = False
+        self.dc.value = False  # type: ignore[reportAttributeAccessIssue]
+        self.cs.value = False  # type: ignore[reportAttributeAccessIssue]
         # Confirm SPI locked before writing
-        while not self.spi.try_lock():
+        while not self.spi.try_lock():  # type: ignore[reportAttributeAccessIssue]
             pass
         self.spi.write(bytearray([command]))
-        self.spi.unlock()
-        self.cs.value = True
+        self.spi.unlock()  # type: ignore[reportAttributeAccessIssue]
+        self.cs.value = True  # type: ignore[reportAttributeAccessIssue]
         # Handle any passed data
         if len(args) > 0:
             self.write_data(bytearray(args))
 
-    def write_data_mpy(self, data):
+    def write_data_mpy(self, data: bytes) -> None:
         """Write data to OLED (MicroPython).
 
         Args:
@@ -1117,17 +1135,17 @@ class Display:
         self.spi.write(data)
         self.cs(1)
 
-    def write_data_cpy(self, data):
+    def write_data_cpy(self, data: bytes) -> None:
         """Write data to OLED (CircuitPython).
 
         Args:
             data (bytes): Data to transmit.
         """
-        self.dc.value = True
-        self.cs.value = False
+        self.dc.value = True  # type: ignore[reportAttributeAccessIssue]
+        self.cs.value = False  # type: ignore[reportAttributeAccessIssue]
         # Confirm SPI locked before writing
-        while not self.spi.try_lock():
+        while not self.spi.try_lock():  # type: ignore[reportAttributeAccessIssue]
             pass
         self.spi.write(data)
-        self.spi.unlock()
-        self.cs.value = True
+        self.spi.unlock()  # type: ignore[reportAttributeAccessIssue]
+        self.cs.value = True  # type: ignore[reportAttributeAccessIssue]
