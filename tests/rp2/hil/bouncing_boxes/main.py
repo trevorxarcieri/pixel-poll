@@ -2,7 +2,7 @@
 
 from random import random, seed
 
-from ili9341 import Display, color565
+from lcd.ili9341 import Display, color565
 from machine import SPI, Pin
 from utime import (
     sleep_us,  # type: ignore[reportAttributeAccessIssue]
