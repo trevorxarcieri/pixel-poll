@@ -15,6 +15,7 @@ Usage example
 """
 
 import struct
+from typing import Callable
 
 import bluetooth
 from micropython import const
@@ -72,7 +73,7 @@ class BleVoteManager:
         self,
         ble: bluetooth.BLE | None = None,
         *,
-        on_rx=None,  # noqa: ANN001
+        on_rx: Callable[[int, bytes], None] | None = None,
         max_peers: int = 5,
     ) -> None:
         """Initialize the VoteCentral instance.
