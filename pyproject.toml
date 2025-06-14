@@ -30,6 +30,7 @@ optional = true
 [tool.poetry.group.hw.dependencies]
 mpremote = "^1.25.0"
 esptool = "^4.8.1"
+mpy-cross = "^1.25.0.post2"
 
 [tool.poetry.group.esp32]
 optional = true
