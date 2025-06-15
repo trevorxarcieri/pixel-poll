@@ -34,10 +34,7 @@ try:
     i = 0
     timer = ticks_ms()
     while True:
-        display.draw_text(
-            0, display.height, 'HELLO WORLD!', font, colors[i], landscape=True
-        )
-        # Attempt to set framerate to 30 FPS
+        display.draw_text(0, 0, 'HELLO WORLD!', font, colors[i], landscape=True)
         timer_dif = 1000 - ticks_diff(ticks_ms(), timer)
         if timer_dif < 0:
             i = (i + 1) % len(colors)
