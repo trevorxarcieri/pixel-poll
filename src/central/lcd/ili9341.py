@@ -639,9 +639,6 @@ class Display:
             rotate_180 (bool): Rotate text by 180 degrees
             spacing (int): Pixels between letters (default: 1)
         """
-        if landscape:
-            y = self.height - y - 1  # Adjust y for landscape
-
         iterable_text = reversed(text) if rotate_180 else text
         for letter in iterable_text:
             # Get letter array and letter dimensions
