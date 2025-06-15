@@ -4,6 +4,7 @@ exclude = []
 extend-select = [
     "D",    # pydocstyle
     "ANN0", # missing-type-*
+    "ANN2", # missing-return-type-*
 
     "C901",    # complex-structure
     "I",       # isort
