@@ -1,8 +1,17 @@
 """Module containing UI widgets for the application."""
 
+from typing import Callable
+
 from lcd.xglcd_font import XglcdFont
 from micropython import const
-from ui.core import Component, Page
+from ui.core import (
+    BACKGROUND,
+    FOCUS_OUTLINE,
+    TEXT_NORMAL,
+    TEXT_SELECTED,
+    Component,
+    Page,
+)
 
 _DISP_WIDTH = const(320)
 _DISP_HEIGHT = const(240)
@@ -10,8 +19,8 @@ _DISP_HEIGHT = const(240)
 FONT = XglcdFont("lcd/Robotron13x21.c", 13, 21)
 _LETTER_SPACING = const(1)  # Spacing between letters in pixels
 _LINE_SPACING = const(2)  # Spacing between lines in pixels
-_PADDING_X = const(5)  # Padding on the left and right of the card
-_PADDING_Y = const(5)  # Padding on the top and bottom of the card
+_PADDING_X = const(10)  # Padding on the left and right of the card
+_PADDING_Y = const(10)  # Padding on the top and bottom of the card
 
 
 class Card(Component):
@@ -24,6 +33,9 @@ class Card(Component):
         y: int,
         width: int,
         height: int,
+        *,
+        on_select: Callable[[], None] | None = None,
+        selectable: bool = True,
         lines: list[str] = [],
     ) -> None:
         """Initialize the card with position, size, and next page.
@@ -31,7 +43,7 @@ class Card(Component):
         `x`,`y`, `width`, and `height` are in landscape orientation, with the origin at the top-left corner
         of the screen, and (x, y) corresponding to the top-left corner of the card.
         """
-        super().__init__(next_page)
+        super().__init__(next_page, on_select=on_select, selectable=selectable)
         self.x = x
         self.y = y
         self.width = width
@@ -45,7 +57,7 @@ class Card(Component):
             return (-1, -1)
         return y, _DISP_WIDTH - x
 
-    def display(self, focused: bool) -> None:
+    def display(self, *, focused: bool, selected: bool) -> None:
         """Display the card widget, highlighting if focused."""
         if not self.router:
             print("No router available to display the card.")
@@ -83,7 +95,8 @@ class Card(Component):
                 text_y,
                 clean,
                 FONT,
-                color=0xFFFF,  # always draw text in white
+                color=TEXT_NORMAL if not selected else TEXT_SELECTED,
+                background=BACKGROUND,
                 spacing=_LETTER_SPACING,
                 landscape=True,
             )
@@ -94,17 +107,18 @@ class Card(Component):
         portrait_x, portrait_y = self._get_as_portrait(
             min_x - _PADDING_X + card_width, start_y - _PADDING_Y
         )
-        self.router.display.draw_rectangle(
-            portrait_x,
-            portrait_y,
-            card_height,
-            card_width,
-            color=0xFFFF if focused else 0x0000,  # white if focused, black otherwise
-        )
+        if focused:
+            self.router.display.draw_rectangle(
+                portrait_x,
+                portrait_y,
+                card_height,
+                card_width,
+                color=FOCUS_OUTLINE,
+            )
 
 
 _BACK_WIDTH = const(80)
-_BACK_HEIGHT = const(30)
+_BACK_HEIGHT = FONT.height + _PADDING_Y * 2
 
 
 class BackButton(Card):
@@ -113,7 +127,13 @@ class BackButton(Card):
     def __init__(self) -> None:
         """Initialize the back button with position and next page."""
         super().__init__(
-            0, 0, _DISP_HEIGHT - _BACK_HEIGHT, _BACK_WIDTH, _BACK_HEIGHT, ["Back"]
+            0,
+            0,
+            _DISP_HEIGHT - _BACK_HEIGHT,
+            _BACK_WIDTH,
+            _BACK_HEIGHT,
+            selectable=False,
+            lines=["Back"],
         )
 
     def select(self) -> None:
@@ -125,15 +145,17 @@ class BackButton(Card):
 
 
 def get_page(
-    card_info: list[tuple[int, list[str]]],
+    card_info: list[tuple[int, list[str], Callable[[], None] | None]],
     *,
     with_back_button: bool = True,
+    selectable: bool = False,
 ) -> Page:
     """Create a Page whose Cards span the full height and share the width equally.
 
     Args:
-        card_info (list[tuple[int, list[str]]]): [(next_page, lines), ...] for each card to build.
+        card_info (list[tuple[int, list[str]]], Callable | None): [(next_page, lines, on_select), ...] for each card to build.
         with_back_button (bool): If True, adds a BackButton at the bottom-left.
+        selectable (bool): If True, allows selecting cards on the page.
     """
     if not card_info:
         raise ValueError("card_info must contain at least one entry")
@@ -147,16 +169,20 @@ def get_page(
 
     components: list[Component] = []
 
-    for idx, (next_page, lines) in enumerate(card_info):
+    for idx, (next_page, lines, on_select) in enumerate(card_info):
         # X coordinate for the left edge of this card
         x = idx * base_width
 
         # Make the FINAL card absorb any leftover pixels
         width = (_DISP_WIDTH - x) if idx == num_cards - 1 else base_width
 
-        components.append(Card(next_page, x, 0, width, usable_height, lines))
+        components.append(
+            Card(
+                next_page, x, 0, width, usable_height, on_select=on_select, lines=lines
+            )
+        )
 
     if with_back_button:
         components.append(BackButton())
 
-    return Page(components)
+    return Page(components, selectable=selectable)

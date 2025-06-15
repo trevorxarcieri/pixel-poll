@@ -20,7 +20,9 @@ display = Display(
 # card = Card(1, 0, 0, 200, 200, ["Hello", "World!"])
 # page = Page([BackButton(), card])
 waiting_text = ["Waiting"]
-page = get_page([(1, ["Hello", "World!"]), (0, waiting_text)], with_back_button=True)
+page = get_page(
+    [(1, ["Hello", "World!"], None), (0, waiting_text, None)], with_back_button=True
+)
 router = Router(display, [page])
 router.current_page.display()
 
