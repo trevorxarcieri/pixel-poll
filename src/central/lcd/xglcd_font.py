@@ -1,6 +1,7 @@
 """XGLCD Font Utility adapted from https://github.com/rdagger/micropython-ili9341."""
 
 from math import ceil, floor
+from typing import Generator
 
 
 class XglcdFont:
@@ -78,7 +79,7 @@ class XglcdFont:
                 )
                 offset += bytes_per_letter
 
-    def lit_bits(self, n: int):  # noqa: ANN201
+    def lit_bits(self, n: int) -> Generator[int, None, None]:
         """Return positions of 1 bits only."""
         while n:
             b = n & (~n + 1)
