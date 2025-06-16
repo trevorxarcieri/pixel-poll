@@ -4,12 +4,7 @@ from random import random, seed
 
 from lcd.ili9341 import Display, color565
 from machine import SPI, Pin
-from utime import (
-    sleep_us,  # type: ignore[reportAttributeAccessIssue]
-    ticks_cpu,  # type: ignore[reportAttributeAccessIssue]
-    ticks_diff,  # type: ignore[reportAttributeAccessIssue]
-    ticks_us,  # type: ignore[reportAttributeAccessIssue]
-)
+from utime import sleep_us, ticks_cpu, ticks_diff, ticks_us
 
 
 class Box:

@@ -1,10 +1,7 @@
 from lcd.ili9341 import Display, color565
 from lcd.xglcd_font import XglcdFont
 from machine import SPI, Pin
-from utime import (
-    ticks_diff,  # type: ignore[reportAttributeAccessIssue]
-    ticks_ms,  # type: ignore[reportAttributeAccessIssue]
-)
+from utime import ticks_diff, ticks_ms
 
 # Baud rate of 40000000 seems about the max
 spi = SPI(

@@ -2,10 +2,7 @@ from lcd.ili9341 import Display
 from machine import SPI, Pin
 from ui.core import Router
 from ui.widgets import get_page
-from utime import (
-    ticks_diff,  # type: ignore[reportAttributeAccessIssue]
-    ticks_ms,  # type: ignore[reportAttributeAccessIssue]
-)
+from utime import ticks_diff, ticks_ms
 
 spi = SPI(
     0,
