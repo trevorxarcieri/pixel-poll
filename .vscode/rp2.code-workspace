@@ -1,0 +1,13 @@
+{
+  "folders": [{ "path": ".." }],
+  "settings": {
+    "python.analysis.typeshedPaths": [
+      "${workspaceFolder}/venvs/rp2/lib/python3.12/site-packages"
+    ],
+    "python.analysis.stubPath": "${workspaceFolder}/venvs/rp2/lib/python3.12/site-packages/stdlib",
+    "python.defaultInterpreterPath": "${workspaceFolder}/venvs/rp2/bin/python",
+    "python.analysis.diagnosticSeverityOverrides": {
+      "reportMissingModuleSource": "none"
+    }
+  }
+}
