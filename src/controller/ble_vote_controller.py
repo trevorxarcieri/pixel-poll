@@ -15,6 +15,7 @@ Your main state machine only needs:
 """
 
 import struct
+from typing import Callable
 
 import bluetooth
 from micropython import const
@@ -67,7 +68,7 @@ class BleVoteController:
         self,
         ble: bluetooth.BLE | None = None,
         name: str = "ESP32-Vote",
-        on_rx=None,  # noqa: ANN001
+        on_rx: Callable[[bytes], None] | None = None,
         adv_interval_us: int = 500_000,
     ):
         """Initialize the BLE vote service."""

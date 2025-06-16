@@ -4,6 +4,7 @@ exclude = []
 extend-select = [
     "D",    # pydocstyle
     "ANN0", # missing-type-*
+    "ANN2", # missing-return-type-*
 
     "C901",    # complex-structure
     "I",       # isort
@@ -34,7 +35,8 @@ extend-select = [
 ]
 
 ignore = [
-    "D104", # undocumented-public-package
+    "D104",  # undocumented-public-package
+    "UP035", # deprecated-import: allow importing from typing rather than collections.abc (for mpy compatibility)
 
     # Typeshed rejects complex or non-literal defaults for maintenance and testing reasons,
     # irrelevant to this project.
