@@ -23,7 +23,7 @@ router = Router(
         get_page(
             [
                 (1, ["Settings"], lambda: print("Settings selected")),
-                (0, ["Start"], lambda: print("Start selected")),
+                (5, ["Start"], lambda: print("Start selected")),
             ],
             with_back_button=False,
         ),
@@ -45,6 +45,10 @@ router = Router(
             selectable=True,
         ),
         TimeStepperPage(4, 1, 30),
+        get_page(
+            [(0, ["Right: Yes", "Left: No"], lambda: print("Starting vote"))],
+            with_back_button=False,
+        ),
     ],
 )
 router.current_page.display()
