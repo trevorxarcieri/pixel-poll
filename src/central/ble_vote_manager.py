@@ -18,20 +18,10 @@ import struct
 from typing import Callable
 
 import bluetooth
+from lib.consts import RX_CHAR_UUID, TX_CHAR_UUID, VOTE_SVC_UUID
 from micropython import const
 
-# -------------------------------------------------
-#  UUIDs – **must match** the ESP32 peripheral file
-# -------------------------------------------------
-_VOTE_SVC_UUID = bluetooth.UUID("12345678-1234-5678-1234-56789abcdef0")
-_TX_CHAR_UUID = bluetooth.UUID(
-    "12345678-1234-5678-1234-56789abcdef1"
-)  # ESP32 ➜ RP2350 (notify)
-_RX_CHAR_UUID = bluetooth.UUID(
-    "12345678-1234-5678-1234-56789abcdef2"
-)  # RP2350 ➜ ESP32 (write)
-
-_VOTE_SVC_UUID_BIN = bytes(_VOTE_SVC_UUID)  # type: ignore[reportAssignmentType] for fast adv-scan matching
+_VOTE_SVC_UUID_BIN = bytes(VOTE_SVC_UUID)  # type: ignore[reportAssignmentType] for fast adv-scan matching
 
 # -------------------------------------------------
 #  BLE IRQ event codes (central side)
@@ -149,7 +139,7 @@ class BleVoteManager:
 
     def _handle_gattc_service_result(self, data: tuple) -> None:
         conn_handle, start_handle, end_handle, uuid = data
-        if uuid == _VOTE_SVC_UUID:
+        if uuid == VOTE_SVC_UUID:
             self._peers[conn_handle].svc_range = (start_handle, end_handle)
 
     def _handle_gattc_service_done(self, data: tuple) -> None:
@@ -165,9 +155,9 @@ class BleVoteManager:
         peer = self._peers.get(conn_handle)
         if not peer:
             return
-        if uuid == _TX_CHAR_UUID:
+        if uuid == TX_CHAR_UUID:
             peer.tx_handle = value_handle
-        elif uuid == _RX_CHAR_UUID:
+        elif uuid == RX_CHAR_UUID:
             peer.rx_handle = value_handle
 
     def _handle_gattc_characteristic_done(self, data: tuple) -> None:

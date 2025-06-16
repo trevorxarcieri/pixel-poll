@@ -18,16 +18,8 @@ import struct
 from typing import Callable
 
 import bluetooth
+from lib.consts import RX_CHAR_UUID, TX_CHAR_UUID, VOTE_SVC_UUID
 from micropython import const
-
-# ---------- BLE UUIDs (random but fixed) ----------
-_VOTE_SVC_UUID = bluetooth.UUID("12345678-1234-5678-1234-56789abcdef0")
-_TX_CHAR_UUID = bluetooth.UUID(
-    "12345678-1234-5678-1234-56789abcdef1"
-)  # ESP32 ➜ RP2350 (notify)
-_RX_CHAR_UUID = bluetooth.UUID(
-    "12345678-1234-5678-1234-56789abcdef2"
-)  # RP2350 ➜ ESP32 (write)
 
 # GATT flags
 _FLAG_READ = const(0x0002)
@@ -84,7 +76,7 @@ class BleVoteController:
         self._ble.irq(self._irq)
 
         # Start advertising
-        self._payload = _adv_payload(name.encode(), [_VOTE_SVC_UUID])
+        self._payload = _adv_payload(name.encode(), [VOTE_SVC_UUID])
         self._advertise(interval_us=adv_interval_us)
         print(f"BLE ready: advertising as '{name}'")
 
@@ -112,14 +104,14 @@ class BleVoteController:
 
     def _register_gatt(self) -> tuple[memoryview[int], memoryview[int]]:
         tx_char = (
-            _TX_CHAR_UUID,
+            TX_CHAR_UUID,
             _FLAG_NOTIFY,
         )
         rx_char = (
-            _RX_CHAR_UUID,
+            RX_CHAR_UUID,
             _FLAG_WREN,
         )
-        vote_service = (_VOTE_SVC_UUID, (tx_char, rx_char))
+        vote_service = (VOTE_SVC_UUID, (tx_char, rx_char))
         # [[tx_handle, rx_handle]]
         ((tx_handle, rx_handle),) = self._ble.gatts_register_services((vote_service,))
         return tx_handle, rx_handle
