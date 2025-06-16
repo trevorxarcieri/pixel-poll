@@ -22,6 +22,7 @@ from lib.consts import VOTE_NOTIFY_CHAR_UUID, VOTE_SVC_UUID, VOTE_WRITE_CHAR_UUI
 from micropython import const
 
 _VOTE_SVC_UUID_BIN = bytes(VOTE_SVC_UUID)  # type: ignore[reportAssignmentType] for fast adv-scan matching
+_SCAN_INTERVAL_US = const(30000)  # 30 ms scan interval
 
 # -------------------------------------------------
 #  BLE IRQ event codes (central side)
@@ -81,21 +82,11 @@ class BleVoteManager:
         self._max_peers: int = max_peers
         self._peers: dict[int, _Peer] = {}  # conn_handle → _Peer
         self._addr_to_conn: dict[bytes, int] = {}  # addr → conn_handle
+        self._ble.gap_scan(0, _SCAN_INTERVAL_US, _SCAN_INTERVAL_US)
 
     # -------------------------------------------------
     #  Public helpers
     # -------------------------------------------------
-    def auto_connect(self, scan_ms: int = 0) -> None:
-        """Start scanning for vote controller ESP32s and connect automatically.
-
-        Whenever an advertising packet with the Vote service UUID
-        appears, connect automatically until `max_peers` links are active.
-
-        Args:
-            scan_ms (int):  duration in ms to scan (0 = scan forever)
-        """
-        self._ble.gap_scan(scan_ms, 30000, 30000)  # window/interval = 30 ms
-
     def send(self, conn_handle: int, msg: bytes) -> None:
         """Write a command to a single ESP32 (does NOT await a response)."""
         peer = self._peers.get(conn_handle)
@@ -169,7 +160,7 @@ class BleVoteManager:
         print("Subscribed to", conn_handle)
         # Resume scanning if we need more peers
         if len(self._peers) < self._max_peers:
-            self._ble.gap_scan(0)
+            self._ble.gap_scan(0, _SCAN_INTERVAL_US, _SCAN_INTERVAL_US)
 
     def _handle_gattc_notify(self, data: tuple) -> None:
         conn_handle, value_handle, notify_data = data

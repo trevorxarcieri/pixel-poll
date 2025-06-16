@@ -13,7 +13,6 @@ def got_vote(node_id: int, payload: bytes) -> None:
 
 
 vm = BleVoteManager(on_rx=got_vote, max_peers=5)
-vm.auto_connect()  # start scanning/connecting in background
 
 while True:
     vm.broadcast(b"HI")
