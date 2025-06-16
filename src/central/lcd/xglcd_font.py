@@ -88,7 +88,7 @@ class XglcdFont:
 
     def get_letter(
         self, letter: str, color: int, background: int = 0, landscape: bool = False
-    ) -> tuple[bytes | bytearray, int, int]:
+    ) -> tuple[bytes, int, int]:
         """Convert letter byte data to pixels.
 
         Args:
@@ -98,7 +98,7 @@ class XglcdFont:
             landscape (bool): Orientation (default: False = portrait)
 
         Returns:
-            (bytearray): Pixel data.
+            (bytes): Pixel data.
             (int, int): Letter width and height.
         """
         # Get index of letter
