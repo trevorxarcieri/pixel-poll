@@ -87,8 +87,7 @@ poetry sync --only <board>
 ### Raspberry Pi Pico 2 W Firmware
 
 Hold down the BOOTSEL button while plugging the board into USB. The UF2 firmware file should then be copied to the USB mass storage device that appears.
-The Pico firmware is included in the repo [under `firmware`](firmware/RPI_PICO2_W-20250415-v1.25.0.uf2).
-See the [firmware download page](https://micropython.org/download/RPI_PICO2_W/) for more details.
+The Pico firmware is included in the repo [under `firmware`](firmware/RPI_PICO2_W-20250616-v1.26.0-preview.uf2).
 
 ### ESP32-C3 Firmware
 
@@ -99,7 +98,6 @@ esptool.py --baud 460800 write_flash 0 ESP32_BOARD_NAME-DATE-VERSION.bin
 ```
 
 The ESP32 firmware is included in the repo [under `firmware`](firmware/ESP32_GENERIC_C3-20250415-v1.25.0.bin).
-See the [firmware download page](https://micropython.org/download/ESP32_GENERIC_C3/) for more details.
 
 ## MicroPython Software
 
