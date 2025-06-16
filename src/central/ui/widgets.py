@@ -145,50 +145,6 @@ class BackButton(Card):
         self.router.go_back()
 
 
-def get_page(
-    card_info: list[tuple[int, list[str], Callable[[], None] | None]],
-    *,
-    with_back_button: bool = True,
-    selectable: bool = False,
-) -> Page:
-    """Create a Page whose Cards span the full height and share the width equally.
-
-    Args:
-        card_info (list[tuple[int, list[str]]], Callable | None): [(next_page, lines, on_select), ...] for each card to build.
-        with_back_button (bool): If True, adds a BackButton at the bottom-left.
-        selectable (bool): If True, allows selecting cards on the page.
-    """
-    if not card_info:
-        raise ValueError("card_info must contain at least one entry")
-
-    # Reserve vertical space for the back button if it will be shown
-    usable_height = _DISP_HEIGHT - (_BTN_HEIGHT if with_back_button else 0)
-    num_cards = len(card_info)
-
-    # Base width for every card (integer division)
-    base_width = _DISP_WIDTH // num_cards
-
-    components: list[Component] = []
-
-    for idx, (next_page, lines, on_select) in enumerate(card_info):
-        # X coordinate for the left edge of this card
-        x = idx * base_width
-
-        # Make the FINAL card absorb any leftover pixels
-        width = (_DISP_WIDTH - x) if idx == num_cards - 1 else base_width
-
-        components.append(
-            Card(
-                next_page, x, 0, width, usable_height, on_select=on_select, lines=lines
-            )
-        )
-
-    if with_back_button:
-        components.append(BackButton())
-
-    return Page(components, selectable=selectable)
-
-
 _OK_WIDTH = const(48)
 
 
@@ -208,6 +164,51 @@ class OkButton(Card):
         )
 
 
+def get_page(
+    card_info: list[tuple[int, list[str], Callable[[], None] | None]],
+    *,
+    with_back_button: bool = True,
+    with_ok_button: bool = False,
+    selectable: bool = False,
+) -> Page:
+    """Create a Page whose Cards span the full height and share the width equally.
+
+    Args:
+        card_info (list[tuple[int, list[str]]], Callable | None): [(next_page, lines, on_select), ...] for each card to build.
+        with_back_button (bool): If True, adds a BackButton at the bottom-left.
+        with_ok_button (bool): If True, adds an OkButton at the bottom-right.
+        selectable (bool): If True, allows selecting cards on the page.
+    """
+    if not card_info:
+        raise ValueError("card_info must contain at least one entry")
+
+    # Reserve vertical space for the back button if it will be shown
+    num_cards = len(card_info)
+
+    # Base width for every card (integer division)
+    base_width = _DISP_WIDTH // num_cards
+
+    components: list[Component] = []
+
+    for idx, (next_page, lines, on_select) in enumerate(card_info):
+        # X coordinate for the left edge of this card
+        x = idx * base_width
+
+        # Make the FINAL card absorb any leftover pixels
+        width = (_DISP_WIDTH - x) if idx == num_cards - 1 else base_width
+
+        components.append(
+            Card(next_page, x, 0, width, _DISP_HEIGHT, on_select=on_select, lines=lines)
+        )
+
+    if with_ok_button:
+        components.append(OkButton())
+    if with_back_button:
+        components.append(BackButton())
+
+    return Page(components, selectable=selectable)
+
+
 _TIME_DIGITS_WIDTH = const(50)
 _TIME_COLON_WIDTH = const(15)
 
@@ -220,7 +221,6 @@ class TimeStepperPage(Page):
         self.minutes = minutes
         self.seconds = seconds
 
-        usable_height = _DISP_HEIGHT - _BTN_HEIGHT
         center_x = _DISP_WIDTH // 2
         colon_x = center_x - _TIME_COLON_WIDTH // 2
         left_digits_x = colon_x - _TIME_DIGITS_WIDTH
@@ -235,7 +235,7 @@ class TimeStepperPage(Page):
                     left_digits_x,
                     0,
                     _TIME_DIGITS_WIDTH,
-                    usable_height,
+                    _DISP_HEIGHT,
                     lines=self.minutes_lines,
                 ),
                 Card(
@@ -243,7 +243,7 @@ class TimeStepperPage(Page):
                     colon_x,
                     0,
                     _TIME_COLON_WIDTH,
-                    usable_height,
+                    _DISP_HEIGHT,
                     selectable=False,
                     lines=[":"],
                 ),
@@ -252,7 +252,7 @@ class TimeStepperPage(Page):
                     right_digits_x,
                     0,
                     _TIME_DIGITS_WIDTH,
-                    usable_height,
+                    _DISP_HEIGHT,
                     lines=self.seconds_lines,
                 ),
                 OkButton(),
@@ -264,7 +264,6 @@ class TimeStepperPage(Page):
 
     def select(self) -> None:
         """Select the focused element on the page."""
-        print("focus:", self.focus, "selected:", self.selected)
         if (self.focus == 0 and self.selected == 0) or (
             self.focus == 2 and self.selected == 2
         ):

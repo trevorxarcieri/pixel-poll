@@ -90,10 +90,11 @@ class Page:
 
     def select(self) -> None:
         """Select the focused element on the page."""
+        self.elements[self.focus].select()
         if self.selectable and self.elements[self.focus].selectable:
             self.selected = self.focus
-        self.elements[self.focus].select()
-        self.focus = 0  # reset focus after selection
+        else:
+            self.focus = 0  # reset focus after selection
 
     def focus_next(self) -> None:
         """Move focus to the next element on the page."""

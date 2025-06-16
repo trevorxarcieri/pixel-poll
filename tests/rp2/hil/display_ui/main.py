@@ -30,16 +30,18 @@ router = Router(
         get_page([(2, ["Reporting"], None), (3, ["Timing"], None)]),
         get_page(
             [
-                (1, ["Anonymous"], lambda: print("Anonymous selected")),
-                (1, ["Public"], lambda: print("Public selected")),
+                (2, ["Anonymous"], lambda: print("Anonymous selected")),
+                (2, ["Public"], lambda: print("Public selected")),
             ],
+            with_ok_button=True,
             selectable=True,
         ),
         get_page(
             [
-                (1, ["Infinite"], lambda: print("Infinite selected")),
+                (3, ["Infinite"], lambda: print("Infinite selected")),
                 (4, ["Timed"], lambda: print("Timed selected")),
             ],
+            with_ok_button=True,
             selectable=True,
         ),
         TimeStepperPage(4, 1, 30),
