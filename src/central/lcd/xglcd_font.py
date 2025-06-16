@@ -98,7 +98,7 @@ class XglcdFont:
             landscape (bool): Orientation (default: False = portrait)
 
         Returns:
-            (bytes): Pixel data.
+            (bytearray): Pixel data.
             (int, int): Letter width and height.
         """
         # Get index of letter
