@@ -215,7 +215,9 @@ class Display:
         sleep(0.1)
         self.clear()
 
-    def block(self, x0: int, y0: int, x1: int, y1: int, data: bytes) -> None:
+    def block(
+        self, x0: int, y0: int, x1: int, y1: int, data: bytes | bytearray
+    ) -> None:
         """Write a block of data to display.
 
         Args:
@@ -1121,7 +1123,7 @@ class Display:
         if len(args) > 0:
             self.write_data(bytearray(args))
 
-    def write_data_mpy(self, data: bytes) -> None:
+    def write_data_mpy(self, data: bytes | bytearray) -> None:
         """Write data to OLED (MicroPython).
 
         Args:
