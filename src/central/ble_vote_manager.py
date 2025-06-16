@@ -92,7 +92,7 @@ class BleVoteManager:
         peer = self._peers.get(conn_handle)
         if not peer or peer.tx_handle is None:
             return
-        # WRITE_NO_RESPONSE
+        # write with response (1) to the tx_handle
         self._ble.gattc_write(conn_handle, peer.tx_handle, msg, 1)  # type: ignore[reportArgumentType]
 
     def broadcast(self, msg: bytes) -> None:
