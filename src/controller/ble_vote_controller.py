@@ -18,7 +18,7 @@ import struct
 from typing import Callable
 
 import bluetooth
-from lib.consts import RX_CHAR_UUID, TX_CHAR_UUID, VOTE_SVC_UUID
+from lib.consts import VOTE_NOTIFY_CHAR_UUID, VOTE_SVC_UUID, VOTE_WRITE_CHAR_UUID
 from micropython import const
 
 # GATT flags
@@ -82,18 +82,8 @@ class BleVoteController:
 
     # ---------- Public helpers ----------
 
-    def vote_yes(self) -> None:
-        """Send a 'YES' vote to all connected centrals."""
-        self.send("YES")
-
-    def vote_no(self) -> None:
-        """Send a 'NO' vote to all connected centrals."""
-        self.send("NO")
-
-    def send(self, msg: str | bytes) -> None:
+    def send(self, msg: bytes) -> None:
         """Notify all connected centrals with a UTF-8 string or raw bytes."""
-        if isinstance(msg, str):
-            msg = msg.encode()
         for conn in self._connections:
             try:
                 self._ble.gatts_notify(int(conn), self._tx_handle, msg)  # type: ignore[reportCallIssue]
@@ -104,11 +94,11 @@ class BleVoteController:
 
     def _register_gatt(self) -> tuple[memoryview[int], memoryview[int]]:
         tx_char = (
-            TX_CHAR_UUID,
+            VOTE_NOTIFY_CHAR_UUID,
             _FLAG_NOTIFY,
         )
         rx_char = (
-            RX_CHAR_UUID,
+            VOTE_WRITE_CHAR_UUID,
             _FLAG_WREN,
         )
         vote_service = (VOTE_SVC_UUID, (tx_char, rx_char))

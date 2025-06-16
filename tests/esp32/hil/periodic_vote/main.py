@@ -29,6 +29,6 @@ def rx_callback(payload: bytes) -> None:
 voter = BleVoteController(name="ESP32-A", on_rx=rx_callback)
 
 while True:
-    voter.send("ACK")  # arbitrary string/bytes
+    voter.send(b"ACK")  # arbitrary string/bytes
     print("Sent ACK")
     time.sleep(4)  # send every second

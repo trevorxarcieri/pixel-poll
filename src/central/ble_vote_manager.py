@@ -18,7 +18,7 @@ import struct
 from typing import Callable
 
 import bluetooth
-from lib.consts import RX_CHAR_UUID, TX_CHAR_UUID, VOTE_SVC_UUID
+from lib.consts import VOTE_NOTIFY_CHAR_UUID, VOTE_SVC_UUID, VOTE_WRITE_CHAR_UUID
 from micropython import const
 
 _VOTE_SVC_UUID_BIN = bytes(VOTE_SVC_UUID)  # type: ignore[reportAssignmentType] for fast adv-scan matching
@@ -44,8 +44,8 @@ class _Peer:
     def __init__(self, addr: bytes) -> None:
         self.addr: bytes = addr
         self.conn_handle: int = -1
-        self.tx_handle: memoryview[int] | None = None  # ESP32 ➜ us
-        self.rx_handle: memoryview[int] | None = None  # us ➜ ESP32
+        self.tx_handle: memoryview[int] | None = None  # us ➜ ESP32
+        self.rx_handle: memoryview[int] | None = None  # ESP32 ➜ us
         self.svc_range: tuple[int, int] | None = None  # (start_handle, end_handle)
 
 
@@ -96,17 +96,15 @@ class BleVoteManager:
         """
         self._ble.gap_scan(scan_ms, 30000, 30000)  # window/interval = 30 ms
 
-    def send(self, conn_handle: int, msg: str | bytes) -> None:
+    def send(self, conn_handle: int, msg: bytes) -> None:
         """Write a command to a single ESP32 (does NOT await a response)."""
         peer = self._peers.get(conn_handle)
-        if not peer or peer.rx_handle is None:
+        if not peer or peer.tx_handle is None:
             return
-        if isinstance(msg, str):
-            msg = msg.encode()
         # WRITE_NO_RESPONSE
-        self._ble.gattc_write(conn_handle, peer.rx_handle, msg, 1)  # type: ignore[reportArgumentType]
+        self._ble.gattc_write(conn_handle, peer.tx_handle, msg, 1)  # type: ignore[reportArgumentType]
 
-    def broadcast(self, msg: str | bytes) -> None:
+    def broadcast(self, msg: bytes) -> None:
         """Write the same command to every connected ESP32."""
         for ch in list(self._peers):
             self.send(ch, msg)
@@ -155,18 +153,18 @@ class BleVoteManager:
         peer = self._peers.get(conn_handle)
         if not peer:
             return
-        if uuid == TX_CHAR_UUID:
-            peer.tx_handle = value_handle
-        elif uuid == RX_CHAR_UUID:
+        if uuid == VOTE_NOTIFY_CHAR_UUID:
             peer.rx_handle = value_handle
+        elif uuid == VOTE_WRITE_CHAR_UUID:
+            peer.tx_handle = value_handle
 
     def _handle_gattc_characteristic_done(self, data: tuple) -> None:
         conn_handle, status = data
         peer = self._peers.get(conn_handle)
-        if not peer or status != 0 or peer.tx_handle is None:
+        if not peer or status != 0 or peer.rx_handle is None:
             return
-        # Enable notifications: write 0x0001 to CCCD (tx_handle + 1)
-        cccd = peer.tx_handle + 1  # type: ignore[reportOperatorIssue]
+        # Enable notifications: write 0x0001 to CCCD (rx_handle + 1)
+        cccd = peer.rx_handle + 1  # type: ignore[reportOperatorIssue]
         self._ble.gattc_write(conn_handle, cccd, struct.pack("<h", 1), 1)
         print("Subscribed to", conn_handle)
         # Resume scanning if we need more peers

@@ -16,6 +16,6 @@ vm = BleVoteManager(on_rx=got_vote, max_peers=5)
 vm.auto_connect()  # start scanning/connecting in background
 
 while True:
-    vm.broadcast("HI")
+    vm.broadcast(b"HI")
     print("sent HI")
     time.sleep(5)  # broadcast every 5 seconds
