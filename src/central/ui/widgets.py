@@ -16,7 +16,8 @@ from ui.core import (
 _DISP_WIDTH = const(320)
 _DISP_HEIGHT = const(240)
 
-FONT = XglcdFont("lcd/Robotron13x21.c", 13, 21)
+_FONT_HEIGHT = const(21)  # Height of the font in pixels
+FONT = XglcdFont("lcd/Robotron13x21.c", 13, _FONT_HEIGHT)
 _LETTER_SPACING = const(1)  # Spacing between letters in pixels
 _LINE_SPACING = const(2)  # Spacing between lines in pixels
 _PADDING_X = const(10)  # Padding on the left and right of the card
@@ -118,7 +119,7 @@ class Card(Component):
 
 
 _BACK_WIDTH = const(80)
-_BACK_HEIGHT = FONT.height + _PADDING_Y * 2
+_BTN_HEIGHT = const(_FONT_HEIGHT + _PADDING_Y * 2)
 
 
 class BackButton(Card):
@@ -129,9 +130,9 @@ class BackButton(Card):
         super().__init__(
             0,
             0,
-            _DISP_HEIGHT - _BACK_HEIGHT,
+            _DISP_HEIGHT - _BTN_HEIGHT,
             _BACK_WIDTH,
-            _BACK_HEIGHT,
+            _BTN_HEIGHT,
             selectable=False,
             lines=["Back"],
         )
@@ -161,7 +162,7 @@ def get_page(
         raise ValueError("card_info must contain at least one entry")
 
     # Reserve vertical space for the back button if it will be shown
-    usable_height = _DISP_HEIGHT - (_BACK_HEIGHT if with_back_button else 0)
+    usable_height = _DISP_HEIGHT - (_BTN_HEIGHT if with_back_button else 0)
     num_cards = len(card_info)
 
     # Base width for every card (integer division)
@@ -186,3 +187,123 @@ def get_page(
         components.append(BackButton())
 
     return Page(components, selectable=selectable)
+
+
+_OK_WIDTH = const(48)
+
+
+class OkButton(Card):
+    """An ok button widget that submits some current information."""
+
+    def __init__(self) -> None:
+        """Initialize the ok button with position and next page."""
+        super().__init__(
+            0,
+            _DISP_WIDTH - _OK_WIDTH,
+            _DISP_HEIGHT - _BTN_HEIGHT,
+            _OK_WIDTH,
+            _BTN_HEIGHT,
+            selectable=False,
+            lines=["Ok"],
+        )
+
+
+_TIME_DIGITS_WIDTH = const(50)
+_TIME_COLON_WIDTH = const(15)
+
+
+class TimeStepperPage(Page):
+    """A page with a numeric stepper for selecting a number."""
+
+    def __init__(self, page_ind: int, minutes: int, seconds: int) -> None:
+        """Initialize the numeric stepper page."""
+        self.minutes = minutes
+        self.seconds = seconds
+
+        usable_height = _DISP_HEIGHT - _BTN_HEIGHT
+        center_x = _DISP_WIDTH // 2
+        colon_x = center_x - _TIME_COLON_WIDTH // 2
+        left_digits_x = colon_x - _TIME_DIGITS_WIDTH
+        right_digits_x = colon_x + _TIME_COLON_WIDTH
+
+        self.minutes_lines = [f"{minutes:02}"]
+        self.seconds_lines = [f"{seconds:02}"]
+        super().__init__(
+            [
+                Card(
+                    page_ind,
+                    left_digits_x,
+                    0,
+                    _TIME_DIGITS_WIDTH,
+                    usable_height,
+                    lines=self.minutes_lines,
+                ),
+                Card(
+                    page_ind,
+                    colon_x,
+                    0,
+                    _TIME_COLON_WIDTH,
+                    usable_height,
+                    selectable=False,
+                    lines=[":"],
+                ),
+                Card(
+                    page_ind,
+                    right_digits_x,
+                    0,
+                    _TIME_DIGITS_WIDTH,
+                    usable_height,
+                    lines=self.seconds_lines,
+                ),
+                OkButton(),
+                BackButton(),
+            ],
+            selectable=True,
+        )
+        self.selected = -1
+
+    def select(self) -> None:
+        """Select the focused element on the page."""
+        print("focus:", self.focus, "selected:", self.selected)
+        if (self.focus == 0 and self.selected == 0) or (
+            self.focus == 2 and self.selected == 2
+        ):
+            self.selected = -1  # Deselect if already selected
+        elif self.selectable and self.elements[self.focus].selectable:
+            self.selected = self.focus
+
+        self.elements[self.focus].select()
+        if self.focus in (3, 4):  # OkButton or BackButton
+            self.focus = 0  # reset focus after selection
+
+    def update_minutes(self, inc: int) -> None:
+        """Update the minutes value and display."""
+        self.minutes += inc
+        self.minutes %= 100  # Wrap around if minutes exceed 99
+        self.minutes_lines[0] = f"{self.minutes:02}"
+
+    def update_seconds(self, inc: int) -> None:
+        """Update the seconds value and display."""
+        self.seconds += inc
+        self.seconds %= 60  # Wrap around if seconds exceed 59
+        self.seconds_lines[0] = f"{self.seconds:02}"
+
+    def focus_next(self) -> None:
+        """Move focus to the next element on the page."""
+        if self.selected == -1:
+            super().focus_next()
+            return
+        if self.selected == 0:
+            self.update_minutes(1)
+        elif self.selected == 2:
+            self.update_seconds(1)
+
+    def focus_previous(self) -> None:
+        """Move focus to the previous element on the page."""
+        if self.selected == -1:
+            super().focus_previous()
+            return
+        if self.selected == 0:
+            self.update_minutes(-1)
+        elif self.selected == 2:
+            self.update_seconds(-1)

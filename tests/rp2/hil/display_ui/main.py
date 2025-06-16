@@ -4,7 +4,7 @@ import uselect
 from lcd.ili9341 import Display
 from machine import SPI, Pin
 from ui.core import Router
-from ui.widgets import get_page
+from ui.widgets import TimeStepperPage, get_page
 
 spi = SPI(
     0,
@@ -38,10 +38,11 @@ router = Router(
         get_page(
             [
                 (1, ["Infinite"], lambda: print("Infinite selected")),
-                (1, ["Timed"], lambda: print("Timed selected")),
+                (4, ["Timed"], lambda: print("Timed selected")),
             ],
             selectable=True,
         ),
+        TimeStepperPage(4, 1, 30),
     ],
 )
 router.current_page.display()
