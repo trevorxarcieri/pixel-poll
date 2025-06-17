@@ -7,8 +7,8 @@ import uasyncio
 import utime
 from ble_vote_controller import BleVoteController
 from lib.consts import VoteCommand, VoteInfo
+from lib.threadsafe_queue import ThreadSafeQueue
 from machine import Pin, Signal
-from threadsafe_queue import ThreadSafeQueue
 
 # Allocate buffer for hard-crash tracebacks inside IRQ
 micropython.alloc_emergency_exception_buf(100)
