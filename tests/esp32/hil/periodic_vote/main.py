@@ -1,8 +1,11 @@
 import time
 
+import micropython
 import neopixel
 from ble_vote_controller import BleVoteController
 from machine import Pin
+
+micropython.alloc_emergency_exception_buf(100)
 
 PIXEL_PIN = 8  # GPIO your board uses for the NeoPixel
 NUM_PIXELS = 1  # there is only one on-board LED

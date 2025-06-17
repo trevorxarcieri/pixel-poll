@@ -1,7 +1,10 @@
 import time
 
 import machine
+import micropython
 from ble_vote_manager import BleVoteManager
+
+micropython.alloc_emergency_exception_buf(100)
 
 led = machine.Pin("LED", machine.Pin.OUT)  # onboard LED = GP25
 
