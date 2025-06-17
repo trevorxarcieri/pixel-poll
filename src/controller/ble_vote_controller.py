@@ -21,6 +21,8 @@ import bluetooth
 from lib.consts import VOTE_NOTIFY_CHAR_UUID, VOTE_SVC_UUID, VOTE_WRITE_CHAR_UUID
 from micropython import const
 
+_ADV_INT_US = const(30_000)  # 30 ms advertising interval
+
 # GATT flags
 _FLAG_READ = const(0x0002)
 _FLAG_WRITE = const(0x0008)
@@ -52,7 +54,6 @@ def _adv_payload(
     return payload
 
 
-# ==================================================
 class BleVoteController:
     """Encapsulates BLE functionality for an ESP32 vote controller peripheral."""
 
@@ -61,7 +62,6 @@ class BleVoteController:
         ble: bluetooth.BLE | None = None,
         name: str = "ESP32-Vote",
         on_rx: Callable[[bytes], None] | None = None,
-        adv_interval_us: int = 500_000,
     ):
         """Initialize the BLE vote service."""
         self._ble = ble or bluetooth.BLE()
@@ -77,7 +77,7 @@ class BleVoteController:
 
         # Start advertising
         self._payload = _adv_payload(name.encode(), [VOTE_SVC_UUID])
-        self._advertise(interval_us=adv_interval_us)
+        self._advertise(interval_us=_ADV_INT_US)
         print(f"BLE ready: advertising as '{name}'")
 
     # ---------- Public helpers ----------
@@ -102,7 +102,6 @@ class BleVoteController:
             _FLAG_WREN,
         )
         vote_service = (VOTE_SVC_UUID, (tx_char, rx_char))
-        # [[tx_handle, rx_handle]]
         ((tx_handle, rx_handle),) = self._ble.gatts_register_services((vote_service,))
         return tx_handle, rx_handle
 
