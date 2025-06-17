@@ -7,8 +7,8 @@ import uasyncio
 import utime
 from ble_vote_controller import BleVoteController
 from lib.consts import VoteCommand, VoteInfo
+from lib.threadsafe_queue import ThreadSafeQueue
 from machine import Pin, Signal
-from threadsafe_queue import ThreadSafeQueue
 
 # Allocate buffer for hard-crash tracebacks inside IRQ
 micropython.alloc_emergency_exception_buf(100)
@@ -29,7 +29,7 @@ queue: ThreadSafeQueue  # forward declaration; filled in main()
 
 
 async def consume_queue(q: ThreadSafeQueue) -> None:
-    """Consumes commands from the queue and updates LEDs accordingly."""
+    """Consume commands from the queue and update LEDs accordingly."""
     while True:
         payload = await q.get()  # await - no busy polling
         if payload == VoteCommand.START:
@@ -88,7 +88,7 @@ def _scheduled_send(vote: bytes) -> None:
 # Main
 # ------------------------------------------------------------------
 def main() -> None:
-    """Main entry point for the controller module."""
+    """Main entry point for the controller application."""
     global queue, voter
     queue = ThreadSafeQueue(16)
 
