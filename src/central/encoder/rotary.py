@@ -155,7 +155,7 @@ class Rotary:
             raise ValueError(f'{listener} is not an installed listener')
         self._listener.remove(listener)
 
-    def _process_rotary_pins(self, pin: Pin) -> None:
+    def _process_rotary_pins(self, _: Pin) -> None:
         """Process the rotary encoder pins to update the value."""
         old_value = self._value
         clk_dt_pins = (self._hal_get_clk_value() << 1) | self._hal_get_dt_value()
