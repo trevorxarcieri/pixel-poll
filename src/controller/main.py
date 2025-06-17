@@ -17,7 +17,7 @@ micropython.alloc_emergency_exception_buf(100)
 # GPIO setup
 # --------------------------------------------------------------------
 LEFT_LED = [Signal(Pin(i, Pin.OUT), invert=True) for i in (9, 8, 7)]
-RIGHT_LED = [Signal(Pin(i, Pin.OUT), invert=True) for i in (6, 4, 5)]
+RIGHT_LED = [Signal(Pin(i, Pin.OUT), invert=True) for i in (6, 5, 4)]
 RED_BTN_LED = Pin(3, Pin.OUT)
 GREEN_BTN_LED = Pin(1, Pin.OUT)
 
