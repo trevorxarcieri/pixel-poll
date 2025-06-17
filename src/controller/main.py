@@ -71,6 +71,10 @@ def _scheduled_send(vote: bytes) -> None:
 def main() -> None:
     """Main entry point for the controller application."""
     global queue, voter
+    # Turn off left/right LEDs
+    for pin in LEFT_LED + RIGHT_LED:
+        pin.off()
+
     queue = ThreadSafeQueue(16)
 
     voter = BleVoteController(
@@ -89,10 +93,6 @@ def main() -> None:
             _scheduled_send, GREEN_BTN, VoteInfo.YES, _DEBOUNCE_MS
         ),
     )
-
-    # Turn off left/right LEDs
-    for pin in LEFT_LED + RIGHT_LED:
-        pin.off()
 
     loop = uasyncio.get_event_loop()
     loop.create_task(consume_queue(queue))
