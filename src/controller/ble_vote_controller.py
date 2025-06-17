@@ -109,6 +109,7 @@ class BleVoteController:
         """Start advertising."""
         self._ble.gap_advertise(_ADV_INT_US, self._payload)
 
+    # TODO: make this safer with schedule
     def _irq(self, event: int, data: tuple[memoryview[int], ...]) -> None:
         if event == _IRQ_CENTRAL_CONNECT:
             conn_handle, _, _ = data

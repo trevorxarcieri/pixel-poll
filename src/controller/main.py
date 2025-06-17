@@ -8,6 +8,7 @@ import utime
 from ble_vote_controller import BleVoteController
 from lib.consts import VoteCommand, VoteInfo
 from lib.threadsafe_queue import ThreadSafeQueue
+from lib.utils import get_db_button_irq
 from machine import Pin, Signal
 
 # Allocate buffer for hard-crash tracebacks inside IRQ
@@ -100,11 +101,13 @@ def main() -> None:
     # Hook IRQs - falling edge for active-low buttons
     RED_BTN.irq(
         trigger=Pin.IRQ_FALLING,
-        handler=_make_button_irq(RED_BTN, VoteInfo.NO),
+        handler=get_db_button_irq(_scheduled_send, RED_BTN, VoteInfo.NO, _DEBOUNCE_MS),
     )
     GREEN_BTN.irq(
         trigger=Pin.IRQ_FALLING,
-        handler=_make_button_irq(GREEN_BTN, VoteInfo.YES),
+        handler=get_db_button_irq(
+            _scheduled_send, GREEN_BTN, VoteInfo.YES, _DEBOUNCE_MS
+        ),
     )
 
     # Turn off left/right LEDs

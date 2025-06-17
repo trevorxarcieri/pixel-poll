@@ -88,7 +88,7 @@ class BleVoteManager:
         self._max_peers: int = max_peers
         self._peers: dict[int, _Peer] = {}  # conn_handle → _Peer
         self._peer_addrs: list[bytes] = []  # addresses of connected peers
-        self._connecting = False
+        self._scan_disabled = False
         self._scan_fast_briefly()
 
     # -------------------------------------------------
@@ -105,6 +105,21 @@ class BleVoteManager:
     # -------------------------------------------------
     #  Public helpers
     # -------------------------------------------------
+    @property
+    def num_peers(self) -> int:
+        """Return the number of connected peers."""
+        return len(self._peers)
+
+    def stop_scanning(self) -> None:
+        """Stop scanning for new peers."""
+        self._scan_disabled = True
+        self._ble.gap_scan(None)  # type: ignore[reportArgumentType]
+
+    def resume_scanning(self) -> None:
+        """Resume scanning for new peers."""
+        self._scan_disabled = False
+        self._scan_slow_forever()
+
     def send(self, conn_handle: int, msg: bytes) -> None:
         """Write a command to a single ESP32 (does NOT await a response)."""
         peer = self._peers.get(conn_handle)
@@ -129,13 +144,13 @@ class BleVoteManager:
             and addr not in self._peer_addrs
         ):
             # Stop scanning momentarily to init
-            self._connecting = True
+            self._scan_disabled = True
             self._ble.gap_scan(None)  # type: ignore[reportArgumentType] stop scanning
             self._ble.gap_connect(addr_type, addr)  # Non-blocking
             print("Connecting to", self._addr_hex(addr))
 
     def _handle_scan_done(self) -> None:
-        if not self._connecting:
+        if not self._scan_disabled:
             self._scan_slow_forever()
 
     def _handle_peripheral_connect(self, data: tuple) -> None:
@@ -181,7 +196,7 @@ class BleVoteManager:
         self._ble.gattc_write(conn_handle, cccd, _ENABLE_NOTIFY, 1)
         print("Subscribed to", conn_handle)
         # Resume scanning if we need more peers
-        self._connecting = False
+        self._scan_disabled = False
         if len(self._peers) < self._max_peers:
             self._scan_fast_briefly()
 
@@ -200,9 +215,10 @@ class BleVoteManager:
             except ValueError:
                 pass
         # Scan again to replace the lost link
-        self._connecting = False
+        self._scan_disabled = False
         self._scan_fast_briefly()
 
+    # TODO: use micropython schedule here
     def _irq(self, event: int, data: tuple) -> None:
         if event == _IRQ_SCAN_RESULT:
             self._handle_scan_result(data)
