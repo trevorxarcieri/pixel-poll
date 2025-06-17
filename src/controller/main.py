@@ -1,10 +1,7 @@
 """Main entry point for the controller module."""
 
-from typing import Callable
-
 import micropython
 import uasyncio
-import utime
 from ble_vote_controller import BleVoteController
 from lib.consts import VoteCommand, VoteInfo
 from lib.threadsafe_queue import ThreadSafeQueue
@@ -27,6 +24,8 @@ GREEN_BTN = Pin(10, Pin.IN, Pin.PULL_UP)
 
 
 queue: ThreadSafeQueue  # forward declaration; filled in main()
+voter: BleVoteController | None = None  # set in main()
+_DEBOUNCE_MS = micropython.const(40)  # mechanical bounce time
 
 
 async def consume_queue(q: ThreadSafeQueue) -> None:
@@ -54,25 +53,6 @@ async def consume_queue(q: ThreadSafeQueue) -> None:
             RIGHT_LED[0].off()
             RIGHT_LED[1].off()
             RIGHT_LED[2].off()
-
-
-voter: BleVoteController | None = None  # set in main()
-_DEBOUNCE_MS = micropython.const(40)  # mechanical bounce time
-
-
-def _make_button_irq(pin: Pin, vote_val: bytes) -> Callable[[Pin], None]:
-    """Returns a debounced IRQ handler for `pin`."""
-    last_time = 0  # captured in closure
-
-    def irq_handler(_: Pin) -> None:
-        nonlocal last_time
-        now = utime.ticks_ms()
-        if utime.ticks_diff(now, last_time) < _DEBOUNCE_MS:
-            return
-        last_time = now
-        micropython.schedule(_scheduled_send, vote_val)  # payload = 1 byte (no alloc)
-
-    return irq_handler
 
 
 def _scheduled_send(vote: bytes) -> None:
