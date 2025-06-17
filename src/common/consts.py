@@ -18,6 +18,7 @@ class VoteCommand:
     STOP = bytes(1)
     INDICATE_YES = bytes(2)
     INDICATE_NO = bytes(3)
+    INDICATE_NONE = bytes(4)
 
 
 class VoteInfo:
