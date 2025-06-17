@@ -110,6 +110,10 @@ class BleVoteManager:
         """Return the number of connected peers."""
         return len(self._peers)
 
+    def set_on_rx(self, on_rx: Callable[[int, bytes], None]) -> None:
+        """Set the callback for incoming notifications."""
+        self._on_rx = on_rx
+
     def stop_scanning(self) -> None:
         """Stop scanning for new peers."""
         self._scan_disabled = True
