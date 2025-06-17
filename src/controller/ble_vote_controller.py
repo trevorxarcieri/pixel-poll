@@ -77,7 +77,7 @@ class BleVoteController:
 
         # Start advertising
         self._payload = _adv_payload(name.encode(), [VOTE_SVC_UUID])
-        self._advertise(interval_us=_ADV_INT_US)
+        self._advertise()
         print(f"BLE ready: advertising as '{name}'")
 
     # ---------- Public helpers ----------
@@ -105,22 +105,9 @@ class BleVoteController:
         ((tx_handle, rx_handle),) = self._ble.gatts_register_services((vote_service,))
         return tx_handle, rx_handle
 
-    def _advertise(self, interval_us: int = 500_000) -> None:
-        """(Re)start advertising.
-
-        Ignore the “already advertising” race that can
-        happen immediately after a disconnect.
-        """
-        try:
-            self._ble.gap_advertise(None)  # type: ignore[reportArgumentType] stop if already running
-        except OSError:
-            pass  # no advert → ENOENT, ignore
-
-        try:
-            self._ble.gap_advertise(interval_us, self._payload)
-        except OSError as err:
-            if err.args[0] != -30:  # BLE_HS_EALREADY
-                raise  # re-raise unknown errors
+    def _advertise(self) -> None:
+        """Start advertising."""
+        self._ble.gap_advertise(_ADV_INT_US, self._payload)
 
     def _irq(self, event: int, data: tuple[memoryview[int], ...]) -> None:
         if event == _IRQ_CENTRAL_CONNECT:
