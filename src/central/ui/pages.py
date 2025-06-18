@@ -10,7 +10,7 @@ def build_pages(session: VoteSession, timer_pg: TimeStepperPage) -> list[Page]:
     """Build the pages for the UI."""
     return [
         get_page(
-            [(1, ["Settings"], None), (5, ["Start"], session.spawn)],
+            [(5, ["Start"], session.spawn), (1, ["Settings"], None)],
             with_back_button=False,
         ),
         get_page([(2, ["Reporting"], None), (3, ["Timing"], None)]),
