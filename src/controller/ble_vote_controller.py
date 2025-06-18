@@ -18,16 +18,10 @@ import struct
 from typing import Callable
 
 import bluetooth
+from lib.consts import VOTE_NOTIFY_CHAR_UUID, VOTE_SVC_UUID, VOTE_WRITE_CHAR_UUID
 from micropython import const
 
-# ---------- BLE UUIDs (random but fixed) ----------
-_VOTE_SVC_UUID = bluetooth.UUID("12345678-1234-5678-1234-56789abcdef0")
-_TX_CHAR_UUID = bluetooth.UUID(
-    "12345678-1234-5678-1234-56789abcdef1"
-)  # ESP32 ➜ RP2350 (notify)
-_RX_CHAR_UUID = bluetooth.UUID(
-    "12345678-1234-5678-1234-56789abcdef2"
-)  # RP2350 ➜ ESP32 (write)
+_ADV_INT_US = const(30_000)  # 30 ms advertising interval
 
 # GATT flags
 _FLAG_READ = const(0x0002)
@@ -60,7 +54,6 @@ def _adv_payload(
     return payload
 
 
-# ==================================================
 class BleVoteController:
     """Encapsulates BLE functionality for an ESP32 vote controller peripheral."""
 
@@ -69,7 +62,6 @@ class BleVoteController:
         ble: bluetooth.BLE | None = None,
         name: str = "ESP32-Vote",
         on_rx: Callable[[bytes], None] | None = None,
-        adv_interval_us: int = 500_000,
     ):
         """Initialize the BLE vote service."""
         self._ble = ble or bluetooth.BLE()
@@ -84,24 +76,14 @@ class BleVoteController:
         self._ble.irq(self._irq)
 
         # Start advertising
-        self._payload = _adv_payload(name.encode(), [_VOTE_SVC_UUID])
-        self._advertise(interval_us=adv_interval_us)
+        self._payload = _adv_payload(name.encode(), [VOTE_SVC_UUID])
+        self._advertise()
         print(f"BLE ready: advertising as '{name}'")
 
     # ---------- Public helpers ----------
 
-    def vote_yes(self) -> None:
-        """Send a 'YES' vote to all connected centrals."""
-        self.send("YES")
-
-    def vote_no(self) -> None:
-        """Send a 'NO' vote to all connected centrals."""
-        self.send("NO")
-
-    def send(self, msg: str | bytes) -> None:
+    def send(self, msg: bytes) -> None:
         """Notify all connected centrals with a UTF-8 string or raw bytes."""
-        if isinstance(msg, str):
-            msg = msg.encode()
         for conn in self._connections:
             try:
                 self._ble.gatts_notify(int(conn), self._tx_handle, msg)  # type: ignore[reportCallIssue]
@@ -112,35 +94,22 @@ class BleVoteController:
 
     def _register_gatt(self) -> tuple[memoryview[int], memoryview[int]]:
         tx_char = (
-            _TX_CHAR_UUID,
+            VOTE_NOTIFY_CHAR_UUID,
             _FLAG_NOTIFY,
         )
         rx_char = (
-            _RX_CHAR_UUID,
+            VOTE_WRITE_CHAR_UUID,
             _FLAG_WREN,
         )
-        vote_service = (_VOTE_SVC_UUID, (tx_char, rx_char))
-        # [[tx_handle, rx_handle]]
+        vote_service = (VOTE_SVC_UUID, (tx_char, rx_char))
         ((tx_handle, rx_handle),) = self._ble.gatts_register_services((vote_service,))
         return tx_handle, rx_handle
 
-    def _advertise(self, interval_us: int = 500_000) -> None:
-        """(Re)start advertising.
+    def _advertise(self) -> None:
+        """Start advertising."""
+        self._ble.gap_advertise(_ADV_INT_US, self._payload)
 
-        Ignore the “already advertising” race that can
-        happen immediately after a disconnect.
-        """
-        try:
-            self._ble.gap_advertise(None)  # type: ignore[reportArgumentType] stop if already running
-        except OSError:
-            pass  # no advert → ENOENT, ignore
-
-        try:
-            self._ble.gap_advertise(interval_us, self._payload)
-        except OSError as err:
-            if err.args[0] != -30:  # BLE_HS_EALREADY
-                raise  # re-raise unknown errors
-
+    # TODO: make this safer with schedule
     def _irq(self, event: int, data: tuple[memoryview[int], ...]) -> None:
         if event == _IRQ_CENTRAL_CONNECT:
             conn_handle, _, _ = data

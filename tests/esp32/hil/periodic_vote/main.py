@@ -1,8 +1,11 @@
 import time
 
+import micropython
 import neopixel
 from ble_vote_controller import BleVoteController
 from machine import Pin
+
+micropython.alloc_emergency_exception_buf(100)
 
 PIXEL_PIN = 8  # GPIO your board uses for the NeoPixel
 NUM_PIXELS = 1  # there is only one on-board LED
@@ -29,6 +32,6 @@ def rx_callback(payload: bytes) -> None:
 voter = BleVoteController(name="ESP32-A", on_rx=rx_callback)
 
 while True:
-    voter.send("ACK")  # arbitrary string/bytes
+    voter.send(b"ACK")  # arbitrary string/bytes
     print("Sent ACK")
     time.sleep(4)  # send every second

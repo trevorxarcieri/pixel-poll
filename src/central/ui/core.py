@@ -111,8 +111,12 @@ class Router:
     def __init__(self, display: Display, pages: list[Page]):
         """Initialize the Router with a list of pages."""
         self.display = display
-        self.pages = pages
         self.history = [0]  # Start with the first page in history
+        self.set_pages(pages)
+
+    def set_pages(self, pages: list[Page]) -> None:
+        """Set the Router's pages."""
+        self.pages = pages
         for page in self.pages:
             page.add_router(self)
 

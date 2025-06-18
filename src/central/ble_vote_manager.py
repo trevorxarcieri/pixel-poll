@@ -14,24 +14,21 @@ Usage example
     asyncio.run(asyncio.sleep(60))  # keep main script alive
 """
 
-import struct
 from typing import Callable
 
 import bluetooth
+from lib.consts import VOTE_NOTIFY_CHAR_UUID, VOTE_SVC_UUID, VOTE_WRITE_CHAR_UUID
 from micropython import const
 
-# -------------------------------------------------
-#  UUIDs – **must match** the ESP32 peripheral file
-# -------------------------------------------------
-_VOTE_SVC_UUID = bluetooth.UUID("12345678-1234-5678-1234-56789abcdef0")
-_TX_CHAR_UUID = bluetooth.UUID(
-    "12345678-1234-5678-1234-56789abcdef1"
-)  # ESP32 ➜ RP2350 (notify)
-_RX_CHAR_UUID = bluetooth.UUID(
-    "12345678-1234-5678-1234-56789abcdef2"
-)  # RP2350 ➜ ESP32 (write)
+_ENABLE_NOTIFY = b"\x01\x00"  # pre-packed 0x0001
 
-_VOTE_SVC_UUID_BIN = bytes(_VOTE_SVC_UUID)  # type: ignore[reportAssignmentType] for fast adv-scan matching
+_VOTE_SVC_UUID_BIN = bytes(VOTE_SVC_UUID)  # type: ignore[reportAssignmentType] for fast adv-scan matching
+
+_FAST_SCAN_WIN_US = const(30_000)  # 30 ms listen time
+_FAST_SCAN_INT_US = const(60_000)  # 60 ms between starts  → 50 % duty
+_FAST_CONNECT_MS = const(5_000)  # run for 5 s
+_SLOW_SCAN_WIN_US = const(15_000)  # 15 ms listen time
+_SLOW_SCAN_INT_US = const(300_000)  # 300 ms between starts  → 5 % duty
 
 # -------------------------------------------------
 #  BLE IRQ event codes (central side)
@@ -54,8 +51,8 @@ class _Peer:
     def __init__(self, addr: bytes) -> None:
         self.addr: bytes = addr
         self.conn_handle: int = -1
-        self.tx_handle: memoryview[int] | None = None  # ESP32 ➜ us
-        self.rx_handle: memoryview[int] | None = None  # us ➜ ESP32
+        self.tx_handle: memoryview[int] | None = None  # us ➜ ESP32
+        self.rx_handle: memoryview[int] | None = None  # ESP32 ➜ us
         self.svc_range: tuple[int, int] | None = None  # (start_handle, end_handle)
 
 
@@ -90,33 +87,52 @@ class BleVoteManager:
         self._on_rx = on_rx
         self._max_peers: int = max_peers
         self._peers: dict[int, _Peer] = {}  # conn_handle → _Peer
-        self._addr_to_conn: dict[bytes, int] = {}  # addr → conn_handle
+        self._peer_addrs: list[bytes] = []  # addresses of connected peers
+        self._scan_disabled = False
+        self._scan_fast_briefly()
+
+    # -------------------------------------------------
+    #  Private helpers
+    # -------------------------------------------------
+    def _scan_fast_briefly(self) -> None:
+        """Scan fast for a short time to find new peers."""
+        self._ble.gap_scan(_FAST_CONNECT_MS, _FAST_SCAN_INT_US, _FAST_SCAN_WIN_US)
+
+    def _scan_slow_forever(self) -> None:
+        """Scan slow to find new peers."""
+        self._ble.gap_scan(0, _SLOW_SCAN_INT_US, _SLOW_SCAN_WIN_US)
 
     # -------------------------------------------------
     #  Public helpers
     # -------------------------------------------------
-    def auto_connect(self, scan_ms: int = 0) -> None:
-        """Start scanning for vote controller ESP32s and connect automatically.
+    @property
+    def num_peers(self) -> int:
+        """Return the number of connected peers."""
+        return len(self._peers)
 
-        Whenever an advertising packet with the Vote service UUID
-        appears, connect automatically until `max_peers` links are active.
+    def set_on_rx(self, on_rx: Callable[[int, bytes], None]) -> None:
+        """Set the callback for incoming notifications."""
+        self._on_rx = on_rx
 
-        Args:
-            scan_ms (int):  duration in ms to scan (0 = scan forever)
-        """
-        self._ble.gap_scan(scan_ms, 30000, 30000)  # window/interval = 30 ms
+    def stop_scanning(self) -> None:
+        """Stop scanning for new peers."""
+        self._scan_disabled = True
+        self._ble.gap_scan(None)  # type: ignore[reportArgumentType]
 
-    def send(self, conn_handle: int, msg: str | bytes) -> None:
+    def resume_scanning(self) -> None:
+        """Resume scanning for new peers."""
+        self._scan_disabled = False
+        self._scan_slow_forever()
+
+    def send(self, conn_handle: int, msg: bytes) -> None:
         """Write a command to a single ESP32 (does NOT await a response)."""
         peer = self._peers.get(conn_handle)
-        if not peer or peer.rx_handle is None:
+        if not peer or peer.tx_handle is None:
             return
-        if isinstance(msg, str):
-            msg = msg.encode()
-        # WRITE_NO_RESPONSE
-        self._ble.gattc_write(conn_handle, peer.rx_handle, msg, 1)  # type: ignore[reportArgumentType]
+        # write with response (1) to the tx_handle
+        self._ble.gattc_write(conn_handle, peer.tx_handle, msg, 1)  # type: ignore[reportArgumentType]
 
-    def broadcast(self, msg: str | bytes) -> None:
+    def broadcast(self, msg: bytes) -> None:
         """Write the same command to every connected ESP32."""
         for ch in list(self._peers):
             self.send(ch, msg)
@@ -126,30 +142,34 @@ class BleVoteManager:
     # -------------------------------------------------
     def _handle_scan_result(self, data: tuple) -> None:
         addr_type, addr, adv_type, rssi, adv_data = data
-        adv_bytes = bytes(adv_data)  # convert once
         if (
             len(self._peers) < self._max_peers
-            and _VOTE_SVC_UUID_BIN in adv_bytes
-            and bytes(addr) not in self._addr_to_conn
+            and _VOTE_SVC_UUID_BIN in bytes(adv_data)
+            and addr not in self._peer_addrs
         ):
             # Stop scanning momentarily to init
-            self._ble.gap_scan(None)  # type: ignore[reportArgumentType]
+            self._scan_disabled = True
+            self._ble.gap_scan(None)  # type: ignore[reportArgumentType] stop scanning
             self._ble.gap_connect(addr_type, addr)  # Non-blocking
             print("Connecting to", self._addr_hex(addr))
 
+    def _handle_scan_done(self) -> None:
+        if not self._scan_disabled:
+            self._scan_slow_forever()
+
     def _handle_peripheral_connect(self, data: tuple) -> None:
         conn_handle, addr_type, addr = data
-        peer = _Peer(addr)
+        peer = _Peer(bytes(addr))
         peer.conn_handle = conn_handle
         self._peers[conn_handle] = peer
-        self._addr_to_conn[bytes(addr)] = conn_handle
+        self._peer_addrs.append(bytes(addr))
         print("Connected", conn_handle)
         # Discover Vote service
         self._ble.gattc_discover_services(conn_handle)
 
     def _handle_gattc_service_result(self, data: tuple) -> None:
         conn_handle, start_handle, end_handle, uuid = data
-        if uuid == _VOTE_SVC_UUID:
+        if uuid == VOTE_SVC_UUID:
             self._peers[conn_handle].svc_range = (start_handle, end_handle)
 
     def _handle_gattc_service_done(self, data: tuple) -> None:
@@ -165,23 +185,24 @@ class BleVoteManager:
         peer = self._peers.get(conn_handle)
         if not peer:
             return
-        if uuid == _TX_CHAR_UUID:
-            peer.tx_handle = value_handle
-        elif uuid == _RX_CHAR_UUID:
+        if uuid == VOTE_NOTIFY_CHAR_UUID:
             peer.rx_handle = value_handle
+        elif uuid == VOTE_WRITE_CHAR_UUID:
+            peer.tx_handle = value_handle
 
     def _handle_gattc_characteristic_done(self, data: tuple) -> None:
         conn_handle, status = data
         peer = self._peers.get(conn_handle)
-        if not peer or status != 0 or peer.tx_handle is None:
+        if not peer or status != 0 or peer.rx_handle is None:
             return
-        # Enable notifications: write 0x0001 to CCCD (tx_handle + 1)
-        cccd = peer.tx_handle + 1  # type: ignore[reportOperatorIssue]
-        self._ble.gattc_write(conn_handle, cccd, struct.pack("<h", 1), 1)
+        # Enable notifications: write 0x0001 to CCCD (rx_handle + 1)
+        cccd = peer.rx_handle + 1  # type: ignore[reportOperatorIssue]
+        self._ble.gattc_write(conn_handle, cccd, _ENABLE_NOTIFY, 1)
         print("Subscribed to", conn_handle)
         # Resume scanning if we need more peers
+        self._scan_disabled = False
         if len(self._peers) < self._max_peers:
-            self._ble.gap_scan(0)
+            self._scan_fast_briefly()
 
     def _handle_gattc_notify(self, data: tuple) -> None:
         conn_handle, value_handle, notify_data = data
@@ -190,15 +211,23 @@ class BleVoteManager:
 
     def _handle_peripheral_disconnect(self, data: tuple) -> None:
         conn_handle, addr_type, addr = data
-        print("Disconnected", conn_handle, "from", self._addr_hex(addr))
-        self._peers.pop(conn_handle, None)
-        self._addr_to_conn.pop(bytes(addr), None)
+        print("Disconnected", conn_handle)
+        peer = self._peers.pop(conn_handle, None)
+        if peer is not None:
+            try:
+                self._peer_addrs.remove(peer.addr)
+            except ValueError:
+                pass
         # Scan again to replace the lost link
-        self._ble.gap_scan(0)
+        self._scan_disabled = False
+        self._scan_fast_briefly()
 
+    # TODO: use micropython schedule here
     def _irq(self, event: int, data: tuple) -> None:
         if event == _IRQ_SCAN_RESULT:
             self._handle_scan_result(data)
+        elif event == _IRQ_SCAN_DONE:
+            self._handle_scan_done()
         elif event == _IRQ_PERIPHERAL_CONNECT:
             self._handle_peripheral_connect(data)
         elif event == _IRQ_GATTC_SERVICE_RESULT:
