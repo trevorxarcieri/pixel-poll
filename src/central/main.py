@@ -16,7 +16,7 @@ from vote_session import VoteSession
 DISPLAY = init_display()
 ENCODER, ENCODER_BTN = init_encoder()
 
-TIMER_STEPPER_PAGE = TimeStepperPage(4, 1, 30)
+TIMER_STEPPER_PAGE = TimeStepperPage(4, 0, 30)
 
 ROUTER = Router(DISPLAY, [])  # placeholder until pages built
 attach_encoder_navigation(ENCODER, ROUTER)
