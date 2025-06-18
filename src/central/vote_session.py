@@ -123,7 +123,7 @@ class VoteSession:
         self.voting_timer.deinit()
         self.voting_timer = None
 
-        self._mgr.broadcast(VoteCommand.STOP)
+        micropython.schedule(lambda _: self._mgr.broadcast(VoteCommand.STOP), 0)
         self.voting_results_screen_lines[:] = _get_vote_results(self.vote_record)
         self.voting = False
 
@@ -131,7 +131,9 @@ class VoteSession:
         """Reset the voting state and prepare for a new vote."""
         self.vote_record.clear()
         self.voting_results_screen_lines.clear()
-        self._mgr.broadcast(VoteCommand.INDICATE_NONE)
+        micropython.schedule(
+            lambda _: self._mgr.broadcast(VoteCommand.INDICATE_NONE), 0
+        )
         self.voting = False
         self._mgr.resume_scanning()
 
