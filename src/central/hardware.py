@@ -15,7 +15,7 @@ def init_display() -> Display:
             baudrate=40_000_000,
             sck=Pin("GP18", Pin.OUT),
             mosi=Pin("GP19", Pin.OUT),
-            miso=Pin("GP4", Pin.IN, Pin.PULL_DOWN),
+            miso=Pin("GP4", Pin.IN, Pin.PULL_UP),
         ),
         dc=Pin("GP7", Pin.OUT),
         cs=Pin("GP5", Pin.OUT),
