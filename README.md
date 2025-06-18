@@ -94,7 +94,7 @@ The Pico firmware is included in the repo [under `firmware`](firmware/RPI_PICO2_
 ```bash
 source venvs/esp32/bin/activate
 esptool.py erase_flash
-esptool.py --baud 460800 write_flash 0 ESP32_BOARD_NAME-DATE-VERSION.bin
+esptool.py --baud 460800 write_flash 0 firmware/ESP32_GENERIC_C3-20250415-v1.25.0.bin
 ```
 
 The ESP32 firmware is included in the repo [under `firmware`](firmware/ESP32_GENERIC_C3-20250415-v1.25.0.bin).
