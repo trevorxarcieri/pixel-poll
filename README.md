@@ -112,7 +112,7 @@ mpremote fs cp host_script.py :board_script.py
 mpremote disconnect
 ```
 
-The `host_script.py` is the script you want to run on the board, and `board_script.py` is the name it will have on the board. Micropython automatically runs `boot.py` followed by `main.py` on boot, so you can files with these names will run automatically.
+The `host_script.py` is the script you want to run on the board, and `board_script.py` is the name it will have on the board. Micropython automatically runs `boot.py` followed by `main.py` on boot, so files with these names will run automatically.
 
 ### Running Software
 
